@@ -1,0 +1,252 @@
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap');
+
+/* ─── Design Tokens ─────────────────────────────────────────────────── */
+:root {
+  --primary: #ff4757;
+  --primary-hover: #ff6b81;
+  --secondary: #2ed573;
+  --accent: #1e90ff;
+  --bg-color: #f7f8fa;
+  --surface: #ffffff;
+  --text-main: #1a1a2e;
+  --text-muted: #6b7280;
+  --border: rgba(0, 0, 0, 0.08);
+  --glass-bg: rgba(255, 255, 255, 0.7);
+  --glass-border: rgba(255, 255, 255, 0.4);
+  --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.06);
+  --shadow-md: 0 8px 24px rgba(0, 0, 0, 0.08);
+  --shadow-lg: 0 20px 40px rgba(0, 0, 0, 0.12);
+  --radius: 16px;
+  --transition: all 0.25s cubic-bezier(0.25, 0.8, 0.25, 1);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg-color: #0d0f14;
+    --surface: #161a24;
+    --text-main: #f1f2f6;
+    --text-muted: #6b7280;
+    --border: rgba(255, 255, 255, 0.07);
+    --glass-bg: rgba(22, 26, 36, 0.8);
+    --glass-border: rgba(255, 255, 255, 0.05);
+  }
+}
+
+/* ─── Reset ─────────────────────────────────────────────────────────── */
+*, *::before, *::after {
+  margin: 0; padding: 0; box-sizing: border-box;
+}
+
+html { scroll-behavior: smooth; }
+
+body {
+  font-family: 'Outfit', -apple-system, BlinkMacSystemFont, sans-serif;
+  background: var(--bg-color);
+  color: var(--text-main);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  line-height: 1.5;
+}
+
+h1, h2, h3, h4 { line-height: 1.2; font-weight: 700; }
+
+/* ─── Utilities ─────────────────────────────────────────────────────── */
+.glass {
+  background: var(--glass-bg);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-sm);
+}
+
+.text-gradient {
+  background: linear-gradient(135deg, #ff4757, #ff9f43);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* ─── Buttons ───────────────────────────────────────────────────────── */
+.btn-primary {
+  background: linear-gradient(135deg, #ff4757, #ff6b81);
+  color: white;
+  border: none;
+  padding: 11px 22px;
+  border-radius: 50px;
+  font-weight: 700;
+  font-size: 0.95rem;
+  font-family: 'Outfit', sans-serif;
+  cursor: pointer;
+  transition: var(--transition);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  box-shadow: 0 4px 14px rgba(255, 71, 87, 0.3);
+  text-decoration: none;
+}
+
+.btn-primary:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(255, 71, 87, 0.45);
+}
+
+.btn-primary:active:not(:disabled) { transform: translateY(0); }
+
+.btn-primary:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.btn-secondary {
+  background: var(--surface);
+  color: var(--text-main);
+  border: 1px solid var(--border);
+  padding: 11px 22px;
+  border-radius: 50px;
+  font-weight: 600;
+  font-size: 0.95rem;
+  font-family: 'Outfit', sans-serif;
+  cursor: pointer;
+  transition: var(--transition);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  text-decoration: none;
+}
+
+.btn-secondary:hover {
+  background: var(--bg-color);
+  transform: translateY(-1px);
+}
+
+/* ─── Inputs ────────────────────────────────────────────────────────── */
+.input-field {
+  width: 100%;
+  padding: 13px 16px;
+  border-radius: 14px;
+  border: 1px solid var(--border);
+  background: var(--bg-color);
+  color: var(--text-main);
+  font-family: 'Outfit', sans-serif;
+  font-size: 0.95rem;
+  transition: var(--transition);
+  outline: none;
+}
+
+.input-field:focus {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(255, 71, 87, 0.1);
+  background: var(--surface);
+}
+
+.input-field::placeholder { color: var(--text-muted); }
+
+/* ─── Animations ────────────────────────────────────────────────────── */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(12px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.4; }
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.4s cubic-bezier(0.25, 0.8, 0.25, 1) both;
+}
+
+/* ─── Scrollbar ─────────────────────────────────────────────────────── */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: var(--text-muted); }
+
+/* ─── Hide scrollbar (pills) ────────────────────────────────────────── */
+.scrollbar-hide { scrollbar-width: none; -ms-overflow-style: none; }
+.scrollbar-hide::-webkit-scrollbar { display: none; }
+
+/* ─── Responsive Overrides ──────────────────────────────────────────── */
+@media (max-width: 768px) {
+  .admin-sidebar {
+    position: fixed !important;
+    left: -280px !important;
+    top: 0 !important;
+    bottom: 0 !important;
+    z-index: 1000 !important;
+    transition: left 0.3s ease !important;
+    box-shadow: 4px 0 24px rgba(0,0,0,0.15) !important;
+  }
+  .admin-sidebar.open {
+    left: 0 !important;
+  }
+  .admin-sidebar-overlay {
+    display: none !important;
+    position: fixed !important;
+    inset: 0 !important;
+    background: rgba(0,0,0,0.4) !important;
+    z-index: 999 !important;
+  }
+  .admin-sidebar-overlay.show {
+    display: block !important;
+  }
+  .admin-main {
+    padding: 76px 16px 80px !important;
+    margin-left: 0 !important;
+  }
+  .admin-header-mobile {
+    display: flex !important;
+  }
+  .stat-cards {
+    grid-template-columns: 1fr 1fr !important;
+  }
+  .landing-header {
+    padding: 16px 20px !important;
+  }
+  .landing-section {
+    padding: 40px 20px !important;
+  }
+  .settings-grid {
+    grid-template-columns: 1fr !important;
+  }
+}
+
+@media (max-width: 480px) {
+  .stat-cards {
+    grid-template-columns: 1fr !important;
+  }
+  .admin-main {
+    padding: 16px 12px !important;
+  }
+  .glass {
+    border-radius: 12px !important;
+  }
+  .auth-card {
+    padding: 28px 20px !important;
+  }
+}
+
+@media (min-width: 769px) {
+  .admin-sidebar-overlay {
+    display: none !important;
+  }
+  .admin-header-mobile {
+    display: none !important;
+  }
+  .admin-bottom-nav {
+    display: none !important;
+  }
+}
+
+@media (max-width: 768px) {
+  .admin-bottom-nav {
+    display: flex !important;
+  }
+}
