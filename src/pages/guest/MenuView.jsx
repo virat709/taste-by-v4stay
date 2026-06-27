@@ -209,13 +209,6 @@ export default function MenuView() {
       <header style={{ background: 'var(--surface)', borderBottom: '1px solid var(--border)', position: 'sticky', top: 0, zIndex: 100 }}>
         <div style={{ padding: '16px 20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
-            {restaurant.logoUrl && (
-              <img 
-                src={restaurant.logoUrl} 
-                alt={`${restaurant.name} logo`} 
-                style={{ width: '48px', height: '48px', borderRadius: '12px', objectFit: 'cover', border: '1px solid var(--border)' }} 
-              />
-            )}
             <div>
               <h1 style={{ fontSize: '1.25rem', fontWeight: '800', letterSpacing: '-0.3px', margin: 0 }}>{restaurant.name}</h1>
               <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: 'var(--text-muted)', fontSize: '0.82rem', marginTop: '4px' }}>

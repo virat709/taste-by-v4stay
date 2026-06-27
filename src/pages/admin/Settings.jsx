@@ -1,10 +1,9 @@
 import React, { useEffect, useState } from 'react';
 import { AdminLayout } from './Dashboard';
 import { useAuth } from '../../context/AuthContext';
-import { db, storage } from '../../lib/firebase';
+import { db } from '../../lib/firebase';
 import { doc, getDoc, updateDoc, collection, addDoc, serverTimestamp, onSnapshot, query, orderBy } from 'firebase/firestore';
-import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
-import { Save, UploadCloud, Settings as SettingsIcon, Crown, CheckCircle, Copy, Check, Smartphone } from 'lucide-react';
+import { Save, Settings as SettingsIcon, Crown, CheckCircle, Copy, Check, Smartphone } from 'lucide-react';
 import { getEffectivePlan, getTrialDaysRemaining, PLAN_LABELS, PLAN_FEATURES, PROVIDER_UPI_ID, PREMIUM_PRICE, PREMIUM_PRICE_LABEL } from '../../lib/subscription';
 
 export default function Settings() {
@@ -15,8 +14,7 @@ export default function Settings() {
     currency: '₹',
     taxRate: 0,
     upiId: '',
-    staffPin: '',
-    logoUrl: ''
+    staffPin: ''
   });
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -42,8 +40,7 @@ export default function Settings() {
             currency: data.currency || '₹',
             taxRate: data.taxRate || 0,
             upiId: data.upiId || '',
-            staffPin: data.staffPin || '',
-            logoUrl: data.logoUrl || ''
+            staffPin: data.staffPin || ''
           });
         }
       } catch (err) {
@@ -93,24 +90,6 @@ export default function Settings() {
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: name === 'taxRate' ? Number(value) : value }));
-  };
-
-  const handleFileUpload = async (e, field) => {
-    const file = e.target.files[0];
-    if (!file || !user) return;
-    
-    try {
-      setMessage('Uploading image...');
-      const storageRef = ref(storage, `restaurants/${user.uid}/${field}_${Date.now()}`);
-      await uploadBytes(storageRef, file);
-      const url = await getDownloadURL(storageRef);
-      setFormData(prev => ({ ...prev, [field]: url }));
-      setMessage('Upload successful!');
-      setTimeout(() => setMessage(''), 3000);
-    } catch (err) {
-      console.error(err);
-      setMessage('Upload failed. Please check Firebase Storage rules.');
-    }
   };
 
   const handleSave = async (e) => {
@@ -254,17 +233,6 @@ export default function Settings() {
               </div>
             </div>
             
-            <div style={{ marginTop: '16px' }}>
-              <label style={{ display: 'block', marginBottom: '8px', fontSize: '0.85rem', fontWeight: '600', color: 'var(--text-muted)' }}>Logo URL</label>
-              <div style={{ display: 'flex', gap: '12px' }}>
-                <input className="input-field" style={{ flex: 1 }} name="logoUrl" value={formData.logoUrl} onChange={handleChange} placeholder="https://..." />
-                <label className="btn-secondary" style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  <UploadCloud size={16} /> Upload
-                  <input type="file" style={{ display: 'none' }} accept="image/*" onChange={e => handleFileUpload(e, 'logoUrl')} />
-                </label>
-              </div>
-              {formData.logoUrl && <img src={formData.logoUrl} alt="Logo preview" style={{ height: '40px', marginTop: '12px', borderRadius: '8px' }} />}
-            </div>
           </div>
 
           {/* Payment Settings */}
