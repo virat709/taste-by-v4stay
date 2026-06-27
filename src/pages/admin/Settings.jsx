@@ -124,7 +124,7 @@ export default function Settings() {
               ))}
             </div>
             {getEffectivePlan(formData) !== 'paid' && (
-              <button type="button" onClick={() => window.open('https://your-upgrade-link.com', '_blank')} style={{ padding: '12px 28px', background: 'linear-gradient(135deg, #ff4757, #ff6b81)', border: 'none', borderRadius: '12px', color: 'white', fontWeight: '800', fontSize: '0.95rem', cursor: 'pointer', fontFamily: 'inherit', boxShadow: '0 4px 16px rgba(255,71,87,0.3)' }}>
+              <button type="button" onClick={() => window.open(window.location.origin, '_blank')} style={{ padding: '12px 28px', background: 'linear-gradient(135deg, #ff4757, #ff6b81)', border: 'none', borderRadius: '12px', color: 'white', fontWeight: '800', fontSize: '0.95rem', cursor: 'pointer', fontFamily: 'inherit', boxShadow: '0 4px 16px rgba(255,71,87,0.3)' }}>
                 Upgrade to Premium — ₹9,999/year
               </button>
             )}

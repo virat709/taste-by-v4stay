@@ -1,6 +1,6 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Utensils, QrCode, TrendingUp, ArrowRight, Smartphone, Zap, ShieldCheck } from 'lucide-react';
+import { Utensils, QrCode, TrendingUp, ArrowRight, Smartphone, Zap, ShieldCheck, CheckCircle } from 'lucide-react';
 
 export default function LandingPage() {
   const navigate = useNavigate();
@@ -60,6 +60,45 @@ export default function LandingPage() {
           <StepCard num="1" title="Sign up & add your menu" desc="Create your account, add categories and dishes with photos and prices." />
           <StepCard num="2" title="Add your tables" desc="Enter your table numbers — QR codes are generated automatically." />
           <StepCard num="3" title="Print & place QR codes" desc="Download QR codes, print them, and place on tables. You're live!" />
+        </div>
+      </section>
+
+      {/* Pricing */}
+      <section style={{ padding: '80px 40px', textAlign: 'center', maxWidth: '900px', margin: '0 auto' }}>
+        <h2 style={{ fontSize: '2rem', fontWeight: '800', marginBottom: '12px' }}>Simple, transparent pricing</h2>
+        <p style={{ color: 'var(--text-muted)', fontSize: '1.05rem', marginBottom: '48px' }}>Start free. Upgrade when you're ready to take orders online.</p>
+        <div style={{ display: 'flex', gap: '24px', justifyContent: 'center', flexWrap: 'wrap' }}>
+          {/* Free Plan */}
+          <div style={{ flex: '1', minWidth: '280px', maxWidth: '380px', background: 'var(--surface)', borderRadius: '24px', border: '1px solid var(--border)', padding: '36px 28px', display: 'flex', flexDirection: 'column' }}>
+            <div style={{ fontSize: '0.85rem', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-muted)', marginBottom: '8px' }}>Free</div>
+            <div style={{ fontSize: '0.95rem', color: 'var(--text-muted)', marginBottom: '20px' }}>14-day free trial, then limited</div>
+            <div style={{ marginBottom: '28px', flex: 1 }}>
+              {['Digital Menu Builder', 'Unlimited QR Codes', 'Guest Menu Viewing', '14-day full feature trial'].map(f => (
+                <div key={f} style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '12px', fontSize: '0.92rem', textAlign: 'left' }}>
+                  <CheckCircle size={18} color="#2ed573" style={{ flexShrink: 0 }} /> {f}
+                </div>
+              ))}
+            </div>
+            <button onClick={() => navigate('/auth')} className="btn-secondary" style={{ width: '100%', padding: '14px', fontSize: '1rem' }}>Get Started</button>
+          </div>
+
+          {/* Premium Plan */}
+          <div style={{ flex: '1', minWidth: '280px', maxWidth: '380px', background: 'var(--surface)', borderRadius: '24px', border: '2px solid #ff4757', padding: '36px 28px', display: 'flex', flexDirection: 'column', position: 'relative', boxShadow: '0 8px 32px rgba(255,71,87,0.12)' }}>
+            <div style={{ position: 'absolute', top: '-12px', left: '50%', transform: 'translateX(-50%)', background: 'linear-gradient(135deg, #ff4757, #ff6b81)', color: 'white', padding: '4px 18px', borderRadius: '50px', fontSize: '0.78rem', fontWeight: '800', textTransform: 'uppercase', letterSpacing: '0.03em' }}>Most Popular</div>
+            <div style={{ fontSize: '0.85rem', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--primary)', marginBottom: '4px' }}>Premium</div>
+            <div style={{ marginBottom: '4px' }}>
+              <span style={{ fontSize: '2.8rem', fontWeight: '800' }}>₹9,999</span>
+              <span style={{ fontSize: '1rem', color: 'var(--text-muted)', fontWeight: '500' }}>/year</span>
+            </div>
+            <div style={{ marginBottom: '28px', flex: 1 }}>
+              {['Everything in Free, plus:', 'Guest Ordering (Cash & UPI)', 'Real-time Order Dashboard', 'Staff Dashboard & Kitchen Display', 'Sales Analytics & Charts', 'Guest Feedback System', 'Order History & Receipts', 'Priority Support'].map(f => (
+                <div key={f} style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '10px', fontSize: '0.92rem', textAlign: 'left', color: f.startsWith('Every') ? 'var(--text-muted)' : 'var(--text-main)' }}>
+                  <CheckCircle size={18} color={f.startsWith('Every') ? 'var(--text-muted)' : '#2ed573'} style={{ flexShrink: 0 }} /> {f}
+                </div>
+              ))}
+            </div>
+            <button onClick={() => navigate('/auth')} className="btn-primary" style={{ width: '100%', padding: '14px', fontSize: '1rem' }}>Start Free Trial</button>
+          </div>
         </div>
       </section>
 
