@@ -2,10 +2,10 @@ import React, { useEffect, useState } from 'react';
 import { AdminLayout } from './Dashboard';
 import { useAuth } from '../../context/AuthContext';
 import { db, storage } from '../../lib/firebase';
-import { doc, getDoc, updateDoc } from 'firebase/firestore';
+import { doc, getDoc, updateDoc, setDoc, collection, addDoc, serverTimestamp, onSnapshot, query, where, getDocs, orderBy } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
-import { Save, UploadCloud, Settings as SettingsIcon, Crown, CheckCircle } from 'lucide-react';
-import { getEffectivePlan, getTrialDaysRemaining, PLAN_LABELS, PLAN_FEATURES } from '../../lib/subscription';
+import { Save, UploadCloud, Settings as SettingsIcon, Crown, CheckCircle, Copy, ExternalLink, Check, Clock, Smartphone } from 'lucide-react';
+import { getEffectivePlan, getTrialDaysRemaining, PLAN_LABELS, PLAN_FEATURES, PROVIDER_UPI_ID, PREMIUM_PRICE, PREMIUM_PRICE_LABEL } from '../../lib/subscription';
 
 export default function Settings() {
   const { user } = useAuth();
@@ -21,6 +21,12 @@ export default function Settings() {
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState('');
+  const [paymentRequests, setPaymentRequests] = useState([]);
+  const [showPaymentForm, setShowPaymentForm] = useState(false);
+  const [utrNumber, setUtrNumber] = useState('');
+  const [paymentName, setPaymentName] = useState('');
+  const [submittingPayment, setSubmittingPayment] = useState(false);
+  const [copied, setCopied] = useState(false);
 
   useEffect(() => {
     if (!user) return;
@@ -43,6 +49,41 @@ export default function Settings() {
     };
     fetchSettings();
   }, [user]);
+
+  // Listen for payment requests
+  useEffect(() => {
+    if (!user) return;
+    const q = query(
+      collection(db, 'restaurants', user.uid, 'payments'),
+      orderBy('createdAt', 'desc')
+    );
+    return onSnapshot(q, snap => {
+      setPaymentRequests(snap.docs.map(d => ({ id: d.id, ...d.data() })));
+    });
+  }, [user]);
+
+  const submitPaymentProof = async () => {
+    if (!utrNumber.trim()) return;
+    setSubmittingPayment(true);
+    try {
+      await addDoc(collection(db, 'restaurants', user.uid, 'payments'), {
+        utr: utrNumber.trim(),
+        payerName: paymentName.trim() || 'Unknown',
+        amount: PREMIUM_PRICE,
+        status: 'pending',
+        createdAt: serverTimestamp(),
+      });
+      setUtrNumber('');
+      setPaymentName('');
+      setShowPaymentForm(false);
+      setMessage('Payment proof submitted! We will verify and upgrade your account within 24 hours.');
+      setTimeout(() => setMessage(''), 5000);
+    } catch {
+      setMessage('Failed to submit. Please try again.');
+    } finally {
+      setSubmittingPayment(false);
+    }
+  };
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -123,10 +164,66 @@ export default function Settings() {
                 </div>
               ))}
             </div>
-            {getEffectivePlan(formData) !== 'paid' && (
-              <button type="button" onClick={() => window.open(window.location.origin, '_blank')} style={{ padding: '12px 28px', background: 'linear-gradient(135deg, #ff4757, #ff6b81)', border: 'none', borderRadius: '12px', color: 'white', fontWeight: '800', fontSize: '0.95rem', cursor: 'pointer', fontFamily: 'inherit', boxShadow: '0 4px 16px rgba(255,71,87,0.3)' }}>
-                Upgrade to Premium — ₹9,999/year
-              </button>
+            {getEffectivePlan(formData) !== 'paid' && !showPaymentForm && (
+              <div>
+                <button type="button" onClick={() => setShowPaymentForm(true)} style={{ padding: '12px 28px', background: 'linear-gradient(135deg, #ff4757, #ff6b81)', border: 'none', borderRadius: '12px', color: 'white', fontWeight: '800', fontSize: '0.95rem', cursor: 'pointer', fontFamily: 'inherit', boxShadow: '0 4px 16px rgba(255,71,87,0.3)' }}>
+                  Upgrade to Premium — ₹9,999/year
+                </button>
+
+                {/* Show existing payment requests */}
+                {paymentRequests.length > 0 && (
+                  <div style={{ marginTop: '16px' }}>
+                    <div style={{ fontSize: '0.85rem', fontWeight: '600', color: 'var(--text-muted)', marginBottom: '8px' }}>Payment History</div>
+                    {paymentRequests.map(p => (
+                      <div key={p.id} style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '10px 14px', background: 'var(--bg-color)', borderRadius: '10px', marginBottom: '6px', fontSize: '0.85rem' }}>
+                        <span style={{ fontWeight: '600' }}>UTR: {p.utr}</span>
+                        <span style={{ marginLeft: 'auto', padding: '3px 10px', borderRadius: '50px', fontSize: '0.75rem', fontWeight: '700', background: p.status === 'approved' ? 'rgba(46,213,115,0.15)' : p.status === 'rejected' ? 'rgba(255,71,87,0.15)' : 'rgba(255,159,67,0.15)', color: p.status === 'approved' ? '#2ed573' : p.status === 'rejected' ? '#ff4757' : '#ff9f43' }}>
+                          {p.status === 'approved' ? 'Approved' : p.status === 'rejected' ? 'Rejected' : 'Pending'}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {showPaymentForm && (
+              <div className="animate-fade-in" style={{ marginTop: '16px', background: 'var(--bg-color)', borderRadius: '16px', padding: '20px', border: '1px solid var(--border)' }}>
+                <h3 style={{ fontWeight: '700', fontSize: '1rem', marginBottom: '16px' }}>Pay {PREMIUM_PRICE_LABEL} via UPI</h3>
+
+                {/* UPI Details */}
+                <div style={{ background: 'var(--surface)', borderRadius: '12px', padding: '16px', border: '1px solid var(--border)', marginBottom: '16px', textAlign: 'center' }}>
+                  <div style={{ fontSize: '0.82rem', color: 'var(--text-muted)', marginBottom: '4px' }}>Pay to this UPI ID</div>
+                  <div style={{ fontSize: '1.3rem', fontWeight: '800', letterSpacing: '0.5px', marginBottom: '8px', fontFamily: 'monospace' }}>{PROVIDER_UPI_ID}</div>
+                  <div style={{ display: 'flex', gap: '8px', justifyContent: 'center' }}>
+                    <button type="button" onClick={() => { navigator.clipboard.writeText(PROVIDER_UPI_ID); setCopied(true); setTimeout(() => setCopied(false), 2000); }}
+                      style={{ background: 'var(--bg-color)', border: '1px solid var(--border)', borderRadius: '10px', padding: '8px 16px', cursor: 'pointer', fontSize: '0.85rem', fontWeight: '600', fontFamily: 'inherit', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                      {copied ? <><Check size={15} color="#2ed573" /> Copied</> : <><Copy size={15} /> Copy UPI ID</>}
+                    </button>
+                    <a href={`upi://pay?pa=${PROVIDER_UPI_ID}&pn=Taste%20by%20v4stay&am=${PREMIUM_PRICE}&cu=INR`}
+                      style={{ background: '#7c3aed', border: 'none', borderRadius: '10px', padding: '8px 16px', cursor: 'pointer', fontSize: '0.85rem', fontWeight: '600', fontFamily: 'inherit', color: 'white', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                      <Smartphone size={15} /> Pay via UPI App
+                    </a>
+                  </div>
+                </div>
+
+                {/* Payment proof form */}
+                <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginBottom: '12px' }}>
+                  After payment, enter the <strong>UTR number</strong> (transaction reference) from your UPI app below:
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                  <input className="input-field" placeholder="Your name (optional)" value={paymentName} onChange={e => setPaymentName(e.target.value)} />
+                  <input className="input-field" placeholder="UTR Number / Transaction Reference *" value={utrNumber} onChange={e => setUtrNumber(e.target.value)} />
+                  <div style={{ display: 'flex', gap: '10px' }}>
+                    <button type="button" className="btn-secondary" style={{ flex: 1 }} onClick={() => { setShowPaymentForm(false); setUtrNumber(''); setPaymentName(''); }}>
+                      Cancel
+                    </button>
+                    <button type="button" className="btn-primary" style={{ flex: 1 }} onClick={submitPaymentProof} disabled={submittingPayment || !utrNumber.trim()}>
+                      {submittingPayment ? 'Submitting...' : 'Submit Payment Proof'}
+                    </button>
+                  </div>
+                </div>
+              </div>
             )}
           </div>
 

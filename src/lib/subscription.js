@@ -34,6 +34,11 @@ export const PLAN_LABELS = {
   free: { label: 'Free', color: '#a4b0be' },
 };
 
+export const PROVIDER_UPI_ID = '9714056759@ybl';
+export const PROVIDER_PHONE = '+91 9714056759';
+export const PREMIUM_PRICE = 9999;
+export const PREMIUM_PRICE_LABEL = '₹9,999/year';
+
 export const PLAN_FEATURES = {
   trial: ['Digital Menu', 'QR Codes', 'Guest Ordering', 'Analytics', 'Feedback', 'Staff Dashboard', 'Kitchen Display'],
   paid: ['Digital Menu', 'QR Codes', 'Guest Ordering', 'Analytics', 'Feedback', 'Staff Dashboard', 'Kitchen Display'],
