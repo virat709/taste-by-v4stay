@@ -57,8 +57,8 @@ export default function Contact() {
               <Mail size={20} color="#1e90ff" />
             </div>
             <div>
-              <div style={{ fontWeight: '700', fontSize: '0.9rem' }}>Email</div>
-              <div style={{ fontSize: '0.88rem', color: 'var(--text-muted)' }}>support@tastebyv4stay.com</div>
+                  <div style={{ fontWeight: '700', fontSize: '0.9rem' }}>Email</div>
+                  <div style={{ fontSize: '0.88rem', color: 'var(--text-muted)' }}>v4services.in@gmail.com</div>
             </div>
           </div>
 
@@ -67,8 +67,8 @@ export default function Contact() {
               <MessageSquare size={20} color="#2ed573" />
             </div>
             <div>
-              <div style={{ fontWeight: '700', fontSize: '0.9rem' }}>WhatsApp</div>
-              <div style={{ fontSize: '0.88rem', color: 'var(--text-muted)' }}>+91-XXXXXXXXXX</div>
+                  <div style={{ fontWeight: '700', fontSize: '0.9rem' }}>WhatsApp</div>
+                  <div style={{ fontSize: '0.88rem', color: 'var(--text-muted)' }}>+91 9714056759</div>
             </div>
           </div>
         </div>

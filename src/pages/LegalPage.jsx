@@ -22,8 +22,8 @@ const pages = {
       { h: '13. Termination', p: 'We may suspend or terminate your account for violation of these Terms. You may cancel your account at any time from Settings. Upon termination, your data will be deleted within 30 days unless required otherwise by law.' },
       { h: '14. Data Deletion', p: 'You can request immediate deletion of your account and all associated data by contacting us. We will delete all personal data within 30 days of your request, subject to legal retention requirements.' },
       { h: '15. Changes to Terms', p: 'We may update these Terms from time to time. Material changes will be notified via email or through the Service. Continued use after changes constitutes acceptance.' },
-      { h: '16. Governing Law', p: 'These Terms are governed by the laws of India. Any disputes shall be subject to the exclusive jurisdiction of the courts in [Your City], India.' },
-      { h: '17. Contact', p: 'For questions about these Terms, please contact us through the Contact page or email [your-email@example.com].' },
+      { h: '16. Governing Law', p: 'These Terms are governed by the laws of India. Any disputes shall be subject to the exclusive jurisdiction of the courts in India.' },
+      { h: '17. Contact', p: 'For questions about these Terms, please contact us through the Contact page or email v4services.in@gmail.com.' },
     ]
   },
   privacy: {
@@ -42,8 +42,8 @@ const pages = {
       { h: '10. Children\'s Privacy', p: 'The Service is not intended for individuals under 18 years of age. We do not knowingly collect information from minors.' },
       { h: '11. International Data Transfers', p: 'Your data may be processed on servers located outside India, including through Firebase\'s global infrastructure. We ensure appropriate safeguards are in place for such transfers.' },
       { h: '12. Changes to This Policy', p: 'We may update this Privacy Policy. Material changes will be notified via email or through the Service. Your continued use constitutes acceptance of the updated policy.' },
-      { h: '13. Grievance Officer', p: 'Under Indian IT Act and Rules, the Grievance Officer for this Service is: [Name], [Email], [Address]. Complaints will be acknowledged within 24 hours and resolved within 30 days.' },
-      { h: '14. Contact Us', p: 'For questions or concerns about this Privacy Policy, please contact us through the Contact page or email [your-email@example.com].' },
+      { h: '13. Grievance Officer', p: 'Under Indian IT Act and Rules, the Grievance Officer for this Service is: v4services.in@gmail.com, +91 9714056759. Complaints will be acknowledged within 24 hours and resolved within 30 days.' },
+      { h: '14. Contact Us', p: 'For questions or concerns about this Privacy Policy, please contact us through the Contact page or email v4services.in@gmail.com.' },
     ]
   }
 };
