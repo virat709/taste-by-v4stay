@@ -87,7 +87,7 @@ export default function LandingPage() {
             <div style={{ position: 'absolute', top: '-12px', left: '50%', transform: 'translateX(-50%)', background: 'linear-gradient(135deg, #ff4757, #ff6b81)', color: 'white', padding: '4px 18px', borderRadius: '50px', fontSize: '0.78rem', fontWeight: '800', textTransform: 'uppercase', letterSpacing: '0.03em' }}>Most Popular</div>
             <div style={{ fontSize: '0.85rem', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--primary)', marginBottom: '4px' }}>Premium</div>
             <div style={{ marginBottom: '4px' }}>
-              <span style={{ fontSize: '2.8rem', fontWeight: '800' }}>₹9,999</span>
+              <span style={{ fontSize: '2.8rem', fontWeight: '800' }}>₹14,999</span>
               <span style={{ fontSize: '1rem', color: 'var(--text-muted)', fontWeight: '500' }}>/year</span>
             </div>
             <div style={{ marginBottom: '28px', flex: 1 }}>

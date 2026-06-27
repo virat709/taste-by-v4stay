@@ -36,8 +36,8 @@ export const PLAN_LABELS = {
 
 export const PROVIDER_UPI_ID = '9652172595@ptaxis';
 export const PROVIDER_PHONE = '+91 9652172595';
-export const PREMIUM_PRICE = 9999;
-export const PREMIUM_PRICE_LABEL = '₹9,999/year';
+export const PREMIUM_PRICE = 14999;
+export const PREMIUM_PRICE_LABEL = '₹14,999/year';
 
 export const PLAN_FEATURES = {
   trial: ['Digital Menu', 'QR Codes', 'Guest Ordering', 'Analytics', 'Feedback', 'Staff Dashboard', 'Kitchen Display'],

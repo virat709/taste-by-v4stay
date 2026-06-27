@@ -140,7 +140,8 @@ export default function MenuView() {
       setShowCart(false);
       setShowUpi(false);
       showToast('Order placed! The kitchen has been notified. 🍳');
-    } catch {
+    } catch (err) {
+      console.error('placeOrder error:', err);
       showToast('Failed to place order. Please try again.', 'error');
     } finally {
       setOrdering(false);
@@ -163,7 +164,8 @@ export default function MenuView() {
       setRating(0);
       setReview('');
       showToast('Thank you for your feedback! 🌟');
-    } catch {
+    } catch (err) {
+      console.error('submitFeedback error:', err);
       showToast('Failed to submit feedback', 'error');
     } finally {
       setSubmittingFeedback(false);
@@ -405,7 +407,7 @@ export default function MenuView() {
                     {(restaurant.upiId || restaurant.upiQrUrl) ? (
                       <>
                         <button onClick={() => placeOrder('Cash')} disabled={ordering} style={{ width: '100%', padding: '16px', background: 'var(--surface)', color: 'var(--text-main)', border: '2px solid var(--border)', borderRadius: '16px', fontWeight: '800', fontSize: '1.05rem', cursor: ordering ? 'not-allowed' : 'pointer', fontFamily: 'inherit' }}>
-                          💵 Cash payment
+                          💵 Place Order
                         </button>
                         <button onClick={() => setShowUpi(true)} disabled={ordering} style={{ width: '100%', padding: '16px', background: 'linear-gradient(135deg, #ff4757, #ff6b81)', color: 'white', border: 'none', borderRadius: '16px', fontWeight: '800', fontSize: '1.05rem', cursor: ordering ? 'not-allowed' : 'pointer', fontFamily: 'inherit', boxShadow: '0 4px 16px rgba(255,71,87,0.35)' }}>
                           📱 Online payment for upi
@@ -413,7 +415,7 @@ export default function MenuView() {
                       </>
                     ) : (
                       <button onClick={() => placeOrder('Cash')} disabled={ordering} style={{ width: '100%', padding: '16px', background: 'linear-gradient(135deg, #ff4757, #ff6b81)', color: 'white', border: 'none', borderRadius: '16px', fontWeight: '800', fontSize: '1.05rem', cursor: ordering ? 'not-allowed' : 'pointer', fontFamily: 'inherit', boxShadow: '0 4px 16px rgba(255,71,87,0.35)' }}>
-                        {ordering ? 'Sending to Kitchen...' : '🍳 Cash payment'}
+                        {ordering ? 'Sending to Kitchen...' : '🍳 Place Order'}
                       </button>
                     )}
                   </div>

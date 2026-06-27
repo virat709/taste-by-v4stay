@@ -120,28 +120,41 @@ export default function Dashboard() {
 
   useEffect(() => {
     if (!user) return;
-    return onSnapshot(doc(db, 'restaurants', user.uid), async (snap) => {
-      if (snap.exists()) {
-        setRestaurant(snap.data());
-      } else {
-        // Auto-create document if missing (e.g. older hotel user)
-        const defaultData = {
-          ownerId: user.uid,
-          name: 'My Restaurant',
-          currency: '₹',
-          taxRate: 0,
-          createdAt: serverTimestamp()
-        };
-        await setDoc(doc(db, 'restaurants', user.uid), defaultData);
-        setRestaurant(defaultData);
-      }
-    });
+    return onSnapshot(
+      doc(db, 'restaurants', user.uid),
+      (snap) => {
+        if (snap.exists()) {
+          setRestaurant(snap.data());
+        } else {
+          const defaultData = {
+            ownerId: user.uid,
+            name: 'My Restaurant',
+            currency: '₹',
+            taxRate: 0,
+            createdAt: serverTimestamp()
+          };
+          setDoc(doc(db, 'restaurants', user.uid), defaultData).catch(() => {});
+          setRestaurant(defaultData);
+        }
+      },
+      (err) => console.error('Restaurant snapshot error:', err)
+    );
   }, [user]);
 
   useEffect(() => {
     if (!user) return;
     const q = query(collection(db, 'restaurants', user.uid, 'orders'), orderBy('createdAt', 'desc'));
-    return onSnapshot(q, snap => setOrders(snap.docs.map(d => ({ id: d.id, ...d.data() }))));
+    return onSnapshot(
+      q,
+      snap => setOrders(snap.docs.map(d => ({ id: d.id, ...d.data() }))),
+      (err) => {
+        console.error('Orders snapshot error:', err);
+        if (err.code === 'FAILED_PRECONDITION') {
+          const projectId = 'restaurant-saas-menu-automaion';
+          console.warn(`Create the required Firestore composite index in the Firebase Console for project: ${projectId}`);
+        }
+      }
+    );
   }, [user]);
 
   const currency = restaurant?.currency || '₹';
@@ -175,7 +188,7 @@ export default function Dashboard() {
             <div style={{ display: 'flex', gap: '8px' }}>
               {effective === 'free' && (
                 <button onClick={() => navigate('/admin/settings')} style={{ padding: '8px 20px', background: 'linear-gradient(135deg, #ff4757, #ff6b81)', border: 'none', borderRadius: '10px', color: 'white', fontWeight: '700', fontSize: '0.85rem', cursor: 'pointer', fontFamily: 'inherit' }}>
-                  Upgrade to Premium — ₹9,999/yr
+                  Upgrade to Premium — ₹14,999/yr
                 </button>
               )}
             </div>

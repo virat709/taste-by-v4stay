@@ -19,9 +19,10 @@ export default function Analytics() {
   useEffect(() => {
     if (!user) return;
     const q = query(collection(db, 'restaurants', user.uid, 'orders'), orderBy('createdAt', 'asc'));
-    return onSnapshot(q, snap => {
-      setOrders(snap.docs.map(d => ({ id: d.id, ...d.data(), date: d.data().createdAt?.toDate?.() || new Date() })));
-    });
+    return onSnapshot(q,
+      snap => setOrders(snap.docs.map(d => ({ id: d.id, ...d.data(), date: d.data().createdAt?.toDate?.() || new Date() }))),
+      err => console.error('Analytics orders snapshot error:', err)
+    );
   }, [user]);
 
   useEffect(() => {
@@ -92,7 +93,7 @@ export default function Analytics() {
           <Lock size={64} style={{ color: 'var(--text-muted)', opacity: 0.3, marginBottom: '16px' }} />
           <h2 style={{ fontSize: '1.6rem', fontWeight: '800', marginBottom: '8px' }}>Analytics Locked</h2>
           <p style={{ color: 'var(--text-muted)', maxWidth: '400px', lineHeight: '1.6', marginBottom: '24px' }}>
-            Sales analytics are available on the <strong>Premium plan</strong> at just ₹9,999/year.
+            Sales analytics are available on the <strong>Premium plan</strong> at just ₹14,999/year.
           </p>
           <button onClick={() => navigate('/admin/settings')} style={{ padding: '14px 32px', background: 'linear-gradient(135deg, #ff4757, #ff6b81)', border: 'none', borderRadius: '14px', color: 'white', fontWeight: '800', fontSize: '1rem', cursor: 'pointer', fontFamily: 'inherit', boxShadow: '0 4px 16px rgba(255,71,87,0.3)' }}>
             <Crown size={18} style={{ marginRight: '8px', verticalAlign: 'middle' }} />

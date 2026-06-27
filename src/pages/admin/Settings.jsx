@@ -32,18 +32,22 @@ export default function Settings() {
     if (!user) return;
     const fetchSettings = async () => {
       setLoading(true);
-      const snap = await getDoc(doc(db, 'restaurants', user.uid));
-      if (snap.exists()) {
-        const data = snap.data();
-        setFormData({
-          name: data.name || '',
-          phone: data.phone || '',
-          currency: data.currency || '₹',
-          taxRate: data.taxRate || 0,
-          upiId: data.upiId || '',
-          staffPin: data.staffPin || '',
-          logoUrl: data.logoUrl || ''
-        });
+      try {
+        const snap = await getDoc(doc(db, 'restaurants', user.uid));
+        if (snap.exists()) {
+          const data = snap.data();
+          setFormData({
+            name: data.name || '',
+            phone: data.phone || '',
+            currency: data.currency || '₹',
+            taxRate: data.taxRate || 0,
+            upiId: data.upiId || '',
+            staffPin: data.staffPin || '',
+            logoUrl: data.logoUrl || ''
+          });
+        }
+      } catch (err) {
+        console.error('Failed to load settings:', err);
       }
       setLoading(false);
     };
@@ -57,9 +61,10 @@ export default function Settings() {
       collection(db, 'restaurants', user.uid, 'payments'),
       orderBy('createdAt', 'desc')
     );
-    return onSnapshot(q, snap => {
-      setPaymentRequests(snap.docs.map(d => ({ id: d.id, ...d.data() })));
-    });
+    return onSnapshot(q,
+      snap => setPaymentRequests(snap.docs.map(d => ({ id: d.id, ...d.data() }))),
+      err => console.error('Payments snapshot error:', err)
+    );
   }, [user]);
 
   const submitPaymentProof = async () => {
@@ -167,7 +172,7 @@ export default function Settings() {
             {getEffectivePlan(formData) !== 'paid' && !showPaymentForm && (
               <div>
                 <button type="button" onClick={() => setShowPaymentForm(true)} style={{ padding: '12px 28px', background: 'linear-gradient(135deg, #ff4757, #ff6b81)', border: 'none', borderRadius: '12px', color: 'white', fontWeight: '800', fontSize: '0.95rem', cursor: 'pointer', fontFamily: 'inherit', boxShadow: '0 4px 16px rgba(255,71,87,0.3)' }}>
-                  Upgrade to Premium — ₹9,999/year
+                  Upgrade to Premium — ₹14,999/year
                 </button>
 
                 {/* Show existing payment requests */}

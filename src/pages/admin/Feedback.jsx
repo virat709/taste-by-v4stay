@@ -13,10 +13,16 @@ export default function Feedback() {
   useEffect(() => {
     if (!user) return;
     const q = query(collection(db, 'restaurants', user.uid, 'feedback'), orderBy('createdAt', 'desc'));
-    const unsubscribe = onSnapshot(q, (snap) => {
-      setFeedbacks(snap.docs.map(doc => ({ id: doc.id, ...doc.data() })));
-      setLoading(false);
-    });
+    const unsubscribe = onSnapshot(q,
+      (snap) => {
+        setFeedbacks(snap.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+        setLoading(false);
+      },
+      (err) => {
+        console.error('Feedback snapshot error:', err);
+        setLoading(false);
+      }
+    );
     return () => unsubscribe();
   }, [user]);
 
