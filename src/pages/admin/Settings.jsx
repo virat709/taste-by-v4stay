@@ -2,9 +2,9 @@ import React, { useEffect, useState } from 'react';
 import { AdminLayout } from './Dashboard';
 import { useAuth } from '../../context/AuthContext';
 import { db, storage } from '../../lib/firebase';
-import { doc, getDoc, updateDoc, setDoc, collection, addDoc, serverTimestamp, onSnapshot, query, where, getDocs, orderBy } from 'firebase/firestore';
+import { doc, getDoc, updateDoc, collection, addDoc, serverTimestamp, onSnapshot, query, orderBy } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
-import { Save, UploadCloud, Settings as SettingsIcon, Crown, CheckCircle, Copy, ExternalLink, Check, Clock, Smartphone } from 'lucide-react';
+import { Save, UploadCloud, Settings as SettingsIcon, Crown, CheckCircle, Copy, Check, Smartphone } from 'lucide-react';
 import { getEffectivePlan, getTrialDaysRemaining, PLAN_LABELS, PLAN_FEATURES, PROVIDER_UPI_ID, PREMIUM_PRICE, PREMIUM_PRICE_LABEL } from '../../lib/subscription';
 
 export default function Settings() {

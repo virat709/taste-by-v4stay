@@ -5,7 +5,7 @@ import { useAuth } from '../../context/AuthContext';
 import { doc, onSnapshot, collection, query, orderBy, updateDoc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { db } from '../../lib/firebase';
 import { printReceipt } from '../../components/ReceiptTemplate';
-import { getEffectivePlan, getTrialDaysRemaining, PLAN_LABELS, canPlaceOrders } from '../../lib/subscription';
+import { getEffectivePlan, getTrialDaysRemaining, PLAN_LABELS } from '../../lib/subscription';
 
 // ─── Shared Layout ─────────────────────────────────────────────────────────────
 export function AdminLayout({ children, restaurantName }) {
@@ -114,6 +114,7 @@ export function AdminLayout({ children, restaurantName }) {
 // ─── Dashboard Page ─────────────────────────────────────────────────────────────
 export default function Dashboard() {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const [restaurant, setRestaurant] = useState(null);
   const [orders, setOrders] = useState([]);
 

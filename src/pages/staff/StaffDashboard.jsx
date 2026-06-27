@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { doc, onSnapshot, collection, query, orderBy, updateDoc } from 'firebase/firestore';
 import { db } from '../../lib/firebase';
-import { Bell, LogOut, CheckCircle2 } from 'lucide-react';
+import { LogOut, CheckCircle2 } from 'lucide-react';
 
 export default function StaffDashboard() {
   const navigate = useNavigate();

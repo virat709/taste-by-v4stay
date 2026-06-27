@@ -1,6 +1,6 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Utensils, QrCode, TrendingUp, ArrowRight, Smartphone, Zap, ShieldCheck, CheckCircle } from 'lucide-react';
+import { ArrowRight, CheckCircle } from 'lucide-react';
 
 export default function LandingPage() {
   const navigate = useNavigate();
