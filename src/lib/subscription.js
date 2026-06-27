@@ -34,8 +34,8 @@ export const PLAN_LABELS = {
   free: { label: 'Free', color: '#a4b0be' },
 };
 
-export const PROVIDER_UPI_ID = '9714056759@ybl';
-export const PROVIDER_PHONE = '+91 9714056759';
+export const PROVIDER_UPI_ID = '9652172595@ptaxis';
+export const PROVIDER_PHONE = '+91 9652172595';
 export const PREMIUM_PRICE = 9999;
 export const PREMIUM_PRICE_LABEL = '₹9,999/year';
 
