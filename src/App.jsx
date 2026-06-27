@@ -14,6 +14,8 @@ import MenuView from './pages/guest/MenuView';
 import StaffLogin from './pages/staff/StaffLogin';
 import StaffDashboard from './pages/staff/StaffDashboard';
 import KitchenDisplay from './pages/kitchen/KitchenDisplay';
+import LegalPage from './pages/LegalPage';
+import Contact from './pages/Contact';
 
 function ProtectedRoute({ children }) {
   const { user } = useAuth();
@@ -36,6 +38,9 @@ function AppRoutes() {
       <Route path="/staff/dashboard" element={<StaffDashboard />} />
       <Route path="/kitchen/:restaurantId" element={<KitchenDisplay />} />
       <Route path="/menu/:restaurantId/:tableNumber" element={<MenuView />} />
+      <Route path="/terms" element={<LegalPage page="terms" />} />
+      <Route path="/privacy" element={<LegalPage page="privacy" />} />
+      <Route path="/contact" element={<Contact />} />
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   );

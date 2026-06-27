@@ -110,6 +110,12 @@ export default function AuthPage() {
             {mode === 'login' ? 'Sign Up' : 'Sign In'}
           </span>
         </p>
+        <div style={{ textAlign: 'center', marginTop: '20px', fontSize: '0.82rem', color: 'rgba(255,255,255,0.3)' }}>
+          By continuing, you agree to our{' '}
+          <span onClick={() => window.open('/terms', '_blank')} style={{ color: 'rgba(255,255,255,0.5)', cursor: 'pointer', textDecoration: 'underline' }}>Terms</span>
+          {' '}and{' '}
+          <span onClick={() => window.open('/privacy', '_blank')} style={{ color: 'rgba(255,255,255,0.5)', cursor: 'pointer', textDecoration: 'underline' }}>Privacy Policy</span>
+        </div>
       </div>
     </div>
   );

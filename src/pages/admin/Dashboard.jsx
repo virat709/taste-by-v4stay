@@ -53,6 +53,13 @@ export function AdminLayout({ children, restaurantName }) {
 
       <div style={{ borderTop: '1px solid var(--border)', paddingTop: '12px' }}>
         <div style={{ padding: '8px 14px', fontSize: '0.8rem', color: 'var(--text-muted)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{user?.email}</div>
+        <div style={{ display: 'flex', gap: '8px', padding: '4px 14px 8px', fontSize: '0.75rem' }}>
+          <span style={{ cursor: 'pointer', color: 'var(--text-muted)' }} onClick={() => window.open('/terms', '_blank')}>Terms</span>
+          <span style={{ color: 'var(--text-muted)' }}>·</span>
+          <span style={{ cursor: 'pointer', color: 'var(--text-muted)' }} onClick={() => window.open('/privacy', '_blank')}>Privacy</span>
+          <span style={{ color: 'var(--text-muted)' }}>·</span>
+          <span style={{ cursor: 'pointer', color: 'var(--text-muted)' }} onClick={() => window.open('/contact', '_blank')}>Contact</span>
+        </div>
         <button onClick={handleLogout} style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '12px 14px', borderRadius: '12px', border: 'none', background: 'transparent', cursor: 'pointer', color: 'var(--text-muted)', fontWeight: '600', fontSize: '0.92rem', width: '100%', fontFamily: 'inherit' }}>
           <LogOut size={18} /> Sign Out
         </button>
