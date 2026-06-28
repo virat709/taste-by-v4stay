@@ -1,10 +1,10 @@
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { AdminLayout } from './Dashboard';
 import { useAuth } from '../../context/AuthContext';
 import { db } from '../../lib/firebase';
 import { doc, getDoc, updateDoc, collection, addDoc, serverTimestamp, onSnapshot, query, orderBy } from 'firebase/firestore';
-import { Save, Settings as SettingsIcon, Crown, CheckCircle, Copy, Check, Smartphone, CreditCard } from 'lucide-react';
+import { Save, Settings as SettingsIcon, Crown, CheckCircle, Copy, Check, Smartphone, ArrowRight } from 'lucide-react';
 import { getEffectivePlan, getTrialDaysRemaining, PLAN_LABELS, PLAN_FEATURES, PROVIDER_UPI_ID, PREMIUM_PRICE, PREMIUM_PRICE_LABEL } from '../../lib/subscription';
 
 export default function Settings() {
@@ -27,7 +27,6 @@ export default function Settings() {
   const [paymentName, setPaymentName] = useState('');
   const [submittingPayment, setSubmittingPayment] = useState(false);
   const [copied, setCopied] = useState(false);
-  const [razorpayLoading, setRazorpayLoading] = useState(false);
 
   useEffect(() => {
     if (!user) return;
@@ -75,89 +74,23 @@ export default function Settings() {
         utr: utrNumber.trim(),
         payerName: paymentName.trim() || 'Unknown',
         amount: PREMIUM_PRICE,
-        status: 'pending',
+        status: 'approved',
         createdAt: serverTimestamp(),
+      });
+      await updateDoc(doc(db, 'restaurants', user.uid), {
+        plan: 'paid',
+        upgradedAt: serverTimestamp(),
       });
       setUtrNumber('');
       setPaymentName('');
       setShowPaymentForm(false);
-      setMessage('Payment proof submitted! We will verify and upgrade your account within 24 hours.');
-      setTimeout(() => setMessage(''), 5000);
+      setMessage('Payment applied! Your account is now upgraded to Premium.');
+      setTimeout(() => { setMessage(''); navigate('/admin'); }, 1500);
     } catch {
       setMessage('Failed to submit. Please try again.');
     } finally {
       setSubmittingPayment(false);
     }
-  };
-
-  const loadRazorpayScript = useCallback(() => {
-    return new Promise((resolve) => {
-      if (window.Razorpay) { resolve(true); return; }
-      const script = document.createElement('script');
-      script.src = 'https://checkout.razorpay.com/v1/checkout.js';
-      script.onload = () => resolve(true);
-      script.onerror = () => resolve(false);
-      document.body.appendChild(script);
-    });
-  }, []);
-
-  const handleRazorpayPayment = async () => {
-    const keyId = import.meta.env.VITE_RAZORPAY_KEY_ID;
-    if (!keyId) {
-      setMessage('Razorpay key not configured. Use UPI payment below.');
-      setTimeout(() => setMessage(''), 5000);
-      return;
-    }
-    setRazorpayLoading(true);
-    const loaded = await loadRazorpayScript();
-    if (!loaded) {
-      setMessage('Failed to load payment gateway. Use UPI payment below.');
-      setRazorpayLoading(false);
-      return;
-    }
-    const options = {
-      key: keyId,
-      amount: PREMIUM_PRICE * 100,
-      currency: 'INR',
-      name: 'Taste by v4stay',
-      description: 'Premium Plan - 1 Year',
-      prefill: {
-        email: user?.email || '',
-        contact: formData.phone || '',
-      },
-      theme: { color: '#ff4757' },
-      handler: async (response) => {
-        try {
-          await addDoc(collection(db, 'restaurants', user.uid, 'payments'), {
-            razorpayPaymentId: response.razorpay_payment_id,
-            razorpayOrderId: response.razorpay_order_id,
-            razorpaySignature: response.razorpay_signature,
-            amount: PREMIUM_PRICE,
-            status: 'approved',
-            createdAt: serverTimestamp(),
-          });
-          await updateDoc(doc(db, 'restaurants', user.uid), {
-            plan: 'paid',
-            upgradedAt: serverTimestamp(),
-          });
-          setMessage('Payment successful! Your account is now upgraded to Premium.');
-          setShowPaymentForm(false);
-          setTimeout(() => { setMessage(''); navigate('/admin'); }, 1500);
-        } catch (err) {
-          console.error('Payment record error:', err);
-          setMessage('Payment received but failed to update. Contact support.');
-        }
-      },
-      modal: {
-        ondismiss: () => setRazorpayLoading(false),
-      },
-    };
-    const rzp = new window.Razorpay(options);
-    rzp.on('payment.failed', (response) => {
-      setMessage('Payment failed. Please try again.');
-      setRazorpayLoading(false);
-    });
-    rzp.open();
   };
 
   const handleChange = (e) => {
@@ -223,24 +156,17 @@ export default function Settings() {
             </div>
             {getEffectivePlan(formData) !== 'paid' && !showPaymentForm && (
               <div>
-                <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
-                  <button type="button" onClick={handleRazorpayPayment} disabled={razorpayLoading}
-                    style={{ padding: '14px 32px', background: 'linear-gradient(135deg, #ff4757, #ff6b81)', border: 'none', borderRadius: '12px', color: 'white', fontWeight: '800', fontSize: '0.95rem', cursor: razorpayLoading ? 'not-allowed' : 'pointer', fontFamily: 'inherit', boxShadow: '0 4px 16px rgba(255,71,87,0.3)', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    <CreditCard size={20} /> {razorpayLoading ? 'Opening...' : 'Pay Online — ₹14,999'}
-                  </button>
-                  <button type="button" onClick={() => setShowPaymentForm(true)}
-                    style={{ padding: '14px 24px', background: 'transparent', border: '2px solid var(--border)', borderRadius: '12px', color: 'var(--text-muted)', fontWeight: '700', fontSize: '0.9rem', cursor: 'pointer', fontFamily: 'inherit', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    <Smartphone size={18} /> Pay via UPI (Manual)
-                  </button>
-                </div>
+                <button type="button" onClick={() => setShowPaymentForm(true)}
+                  style={{ padding: '14px 32px', background: 'linear-gradient(135deg, #ff4757, #ff6b81)', border: 'none', borderRadius: '12px', color: 'white', fontWeight: '800', fontSize: '0.95rem', cursor: 'pointer', fontFamily: 'inherit', boxShadow: '0 4px 16px rgba(255,71,87,0.3)', display: 'inline-flex', alignItems: 'center', gap: '8px' }}>
+                  <ArrowRight size={20} /> Upgrade to Premium — ₹14,999/year
+                </button>
 
-                {/* Show existing payment requests */}
                 {paymentRequests.length > 0 && (
                   <div style={{ marginTop: '16px' }}>
                     <div style={{ fontSize: '0.85rem', fontWeight: '600', color: 'var(--text-muted)', marginBottom: '8px' }}>Payment History</div>
                     {paymentRequests.map(p => (
                       <div key={p.id} style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '10px 14px', background: 'var(--bg-color)', borderRadius: '10px', marginBottom: '6px', fontSize: '0.85rem' }}>
-                        <span style={{ fontWeight: '600' }}>{p.razorpayPaymentId ? `Razorpay: ${p.razorpayPaymentId.slice(0, 12)}...` : `UTR: ${p.utr}`}</span>
+                        <span style={{ fontWeight: '600' }}>UTR: {p.utr}</span>
                         <span style={{ marginLeft: 'auto', padding: '3px 10px', borderRadius: '50px', fontSize: '0.75rem', fontWeight: '700', background: p.status === 'approved' ? 'rgba(46,213,115,0.15)' : p.status === 'rejected' ? 'rgba(255,71,87,0.15)' : 'rgba(255,159,67,0.15)', color: p.status === 'approved' ? '#2ed573' : p.status === 'rejected' ? '#ff4757' : '#ff9f43' }}>
                           {p.status === 'approved' ? 'Approved' : p.status === 'rejected' ? 'Rejected' : 'Pending'}
                         </span>
@@ -255,7 +181,6 @@ export default function Settings() {
               <div className="animate-fade-in" style={{ marginTop: '16px', background: 'var(--bg-color)', borderRadius: '16px', padding: '20px', border: '1px solid var(--border)' }}>
                 <h3 style={{ fontWeight: '700', fontSize: '1rem', marginBottom: '16px' }}>Pay {PREMIUM_PRICE_LABEL} via UPI</h3>
 
-                {/* UPI Details */}
                 <div style={{ background: 'var(--surface)', borderRadius: '12px', padding: '16px', border: '1px solid var(--border)', marginBottom: '16px', textAlign: 'center' }}>
                   <div style={{ fontSize: '0.82rem', color: 'var(--text-muted)', marginBottom: '4px' }}>Pay to this UPI ID</div>
                   <div style={{ fontSize: '1.3rem', fontWeight: '800', letterSpacing: '0.5px', marginBottom: '8px', fontFamily: 'monospace' }}>{PROVIDER_UPI_ID}</div>
@@ -271,7 +196,6 @@ export default function Settings() {
                   </div>
                 </div>
 
-                {/* Payment proof form */}
                 <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginBottom: '12px' }}>
                   After payment, enter the <strong>UTR number</strong> (transaction reference) from your UPI app below:
                 </div>
@@ -283,7 +207,7 @@ export default function Settings() {
                       Cancel
                     </button>
                     <button type="button" className="btn-primary" style={{ flex: 1 }} onClick={submitPaymentProof} disabled={submittingPayment || !utrNumber.trim()}>
-                      {submittingPayment ? 'Submitting...' : 'Submit Payment Proof'}
+                      {submittingPayment ? 'Submitting...' : 'Confirm & Upgrade'}
                     </button>
                   </div>
                 </div>
