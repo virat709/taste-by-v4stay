@@ -159,13 +159,6 @@ export default function Dashboard() {
     );
   }, [user]);
 
-  useEffect(() => {
-    if (pendingOrders.length > prevPendingCount.current && prevPendingCount.current > 0) {
-      try { audioRef.current?.play(); } catch {}
-    }
-    prevPendingCount.current = pendingOrders.length;
-  }, [pendingOrders.length]);
-
   const currency = restaurant?.currency || '₹';
   const todayOrders = orders.filter(o => {
     const d = o.createdAt?.toDate?.();
@@ -173,6 +166,13 @@ export default function Dashboard() {
   });
   const todayRevenue = todayOrders.reduce((s, o) => s + (o.total || 0), 0);
   const pendingOrders = orders.filter(o => o.status === 'pending');
+
+  useEffect(() => {
+    if (pendingOrders.length > prevPendingCount.current && prevPendingCount.current > 0) {
+      try { audioRef.current?.play(); } catch {}
+    }
+    prevPendingCount.current = pendingOrders.length;
+  }, [pendingOrders.length]);
 
   const updateStatus = async (orderId, status) => {
     await updateDoc(doc(db, 'restaurants', user.uid, 'orders', orderId), { status });
