@@ -1,5 +1,4 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { doc, setDoc, serverTimestamp, Timestamp } from 'firebase/firestore';
 import { db } from '../lib/firebase';
@@ -16,7 +15,6 @@ export default function AuthPage() {
   const [resetting, setResetting] = useState(false);
   const [resetSent, setResetSent] = useState(false);
   const { login, signup, resetPassword, signInWithGoogle } = useAuth();
-  const navigate = useNavigate();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -39,9 +37,8 @@ export default function AuthPage() {
       } else {
         await login(email, password);
       }
-      navigate('/admin');
     } catch (err) {
-      setError(err.message.replace('Firebase: ', '').replace(/\(auth\/.*\)\.?/, '').trim());
+      setError((err?.message || 'Something went wrong').replace('Firebase: ', '').replace(/\(auth\/.*\)\.?/, '').trim());
     } finally {
       setLoading(false);
     }
@@ -58,7 +55,7 @@ export default function AuthPage() {
       await resetPassword(email.trim());
       setResetSent(true);
     } catch (err) {
-      setError(err.message.replace('Firebase: ', '').replace(/\(auth\/.*\)\.?/, '').trim());
+      setError((err?.message || 'Something went wrong').replace('Firebase: ', '').replace(/\(auth\/.*\)\.?/, '').trim());
     } finally {
       setResetting(false);
     }
@@ -69,9 +66,8 @@ export default function AuthPage() {
     setLoading(true);
     try {
       await signInWithGoogle();
-      navigate('/admin');
     } catch (err) {
-      setError(err.message.replace('Firebase: ', '').replace(/\(auth\/.*\)\.?/, '').trim());
+      setError((err?.message || 'Something went wrong').replace('Firebase: ', '').replace(/\(auth\/.*\)\.?/, '').trim());
     } finally {
       setLoading(false);
     }

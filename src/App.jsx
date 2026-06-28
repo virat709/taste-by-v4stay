@@ -1,6 +1,7 @@
 import React from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
+import ErrorBoundary from './components/ErrorBoundary';
 
 import LandingPage from './pages/LandingPage';
 import AuthPage from './pages/AuthPage';
@@ -50,9 +51,11 @@ function AppRoutes() {
 function App() {
   return (
     <BrowserRouter>
-      <AuthProvider>
-        <AppRoutes />
-      </AuthProvider>
+      <ErrorBoundary>
+        <AuthProvider>
+          <AppRoutes />
+        </AuthProvider>
+      </ErrorBoundary>
     </BrowserRouter>
   );
 }
