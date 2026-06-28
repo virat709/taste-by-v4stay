@@ -6,13 +6,14 @@ export const printReceipt = (order, restaurant) => {
   const time = order.createdAt?.toDate?.()?.toLocaleString() || new Date().toLocaleString();
 
   const printWindow = window.open('', '_blank', 'width=400,height=600');
-  if (!printWindow) return;
+  if (!printWindow || printWindow.closed) return;
 
+  const orderId = (order.id || '').slice(-6).toUpperCase();
   const html = `
     <!DOCTYPE html>
     <html>
       <head>
-        <title>Receipt - ${order.id}</title>
+        <title>Receipt - ${orderId}</title>
         <style>
           body {
             font-family: 'Courier New', Courier, monospace;
@@ -91,7 +92,7 @@ export const printReceipt = (order, restaurant) => {
         </div>
         
         <div class="details">
-          <div>Order ID: ${order.id.slice(-6).toUpperCase()}</div>
+          <div>Order ID: ${orderId}</div>
           <div>Date: ${time}</div>
           <div>Payment: ${order.paymentMethod || 'Cash/Card'}</div>
         </div>
@@ -150,13 +151,19 @@ export const printReceipt = (order, restaurant) => {
     </html>
   `;
 
-  printWindow.document.write(html);
-  printWindow.document.close();
-  printWindow.focus();
-  
-  // Wait a little for images to load before printing
+  try {
+    printWindow.document.write(html);
+    printWindow.document.close();
+    printWindow.focus();
+  } catch (e) {
+    console.error('Print failed:', e);
+    return;
+  }
+
   setTimeout(() => {
-    printWindow.print();
-    printWindow.close();
+    try {
+      printWindow.print();
+      printWindow.close();
+    } catch (e) { /* window already closed */ }
   }, 500);
 };

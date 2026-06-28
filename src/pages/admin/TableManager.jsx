@@ -15,6 +15,8 @@ export default function TableManager() {
   const [tableNumber, setTableNumber] = useState('');
   const [loading, setLoading] = useState(false);
   const baseUrl = window.location.origin;
+  const tablesRef = useRef(tables);
+  tablesRef.current = tables;
 
   useEffect(() => {
     if (!user) return;
@@ -25,9 +27,11 @@ export default function TableManager() {
   }, [user]);
 
   const addTable = async () => {
+    if (!user) return;
     const num = tableNumber.trim();
     if (!num) return;
-    if (tables.find(t => t.number === num)) {
+    const current = tablesRef.current;
+    if (current.find(t => t.number === num)) {
       alert(`Table "${num}" already exists!`);
       return;
     }
@@ -40,10 +44,12 @@ export default function TableManager() {
   };
 
   const addBulkTables = async (count) => {
-    const start = tables.length + 1;
+    if (!user) return;
+    const current = tablesRef.current;
+    const start = current.length + 1;
     for (let i = start; i < start + count; i++) {
       const num = String(i);
-      if (!tables.find(t => t.number === num)) {
+      if (!current.find(t => t.number === num)) {
         await addDoc(collection(db, 'restaurants', user.uid, 'tables'), {
           number: num, createdAt: serverTimestamp()
         });
@@ -52,9 +58,12 @@ export default function TableManager() {
   };
 
   const deleteTable = async (id) => {
+    if (!user) return;
     if (window.confirm('Remove this table?'))
       await deleteDoc(doc(db, 'restaurants', user.uid, 'tables', id));
   };
+
+  if (!user) return null;
 
   return (
     <AdminLayout>
@@ -133,9 +142,20 @@ function TableCard({ table, userId, baseUrl, onDelete }) {
     const ctx = canvas.getContext('2d');
     ctx.scale(2, 2);
 
-    // Background
+    // Background (manual roundRect for browser compat)
     ctx.fillStyle = '#ffffff';
-    ctx.roundRect(0, 0, canvasW, canvasH, 16);
+    const r = 16;
+    ctx.beginPath();
+    ctx.moveTo(r, 0);
+    ctx.lineTo(canvasW - r, 0);
+    ctx.arcTo(canvasW, 0, canvasW, r, r);
+    ctx.lineTo(canvasW, canvasH - r);
+    ctx.arcTo(canvasW, canvasH, canvasW - r, canvasH, r);
+    ctx.lineTo(r, canvasH);
+    ctx.arcTo(0, canvasH, 0, canvasH - r, r);
+    ctx.lineTo(0, r);
+    ctx.arcTo(0, 0, r, 0, r);
+    ctx.closePath();
     ctx.fill();
 
     // Border

@@ -11,7 +11,7 @@ export default function Feedback() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (!user) return;
+    if (!user) { setLoading(false); return; }
     const q = query(collection(db, 'restaurants', user.uid, 'feedback'), orderBy('createdAt', 'desc'));
     const unsubscribe = onSnapshot(q,
       (snap) => {
@@ -78,7 +78,7 @@ export default function Feedback() {
                     ))}
                   </div>
                   <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)', background: 'var(--bg-color)', padding: '4px 10px', borderRadius: '50px', fontWeight: '600' }}>
-                    Table {f.tableNumber || '?'}
+                    Table {f.tableNumber != null ? f.tableNumber : '?'}
                   </span>
                 </div>
                 

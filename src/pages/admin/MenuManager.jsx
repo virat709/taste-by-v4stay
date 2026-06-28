@@ -53,10 +53,12 @@ export default function MenuManager() {
       });
     });
     return () => unsubs.forEach(u => u());
-  }, [user, categories.length]);
+  }, [user, categories]);
+
+  if (!user) return null;
 
   const addCategory = async () => {
-    if (!newCatName.trim()) return;
+    if (!newCatName.trim() || !user) return;
     await addDoc(collection(db, 'restaurants', user.uid, 'categories'), {
       name: newCatName.trim(), createdAt: serverTimestamp()
     });
@@ -65,7 +67,7 @@ export default function MenuManager() {
   };
 
   const deleteCategory = async (catId) => {
-    if (!window.confirm('Delete this category and all its items?')) return;
+    if (!user || !window.confirm('Delete this category and all its items?')) return;
     // Delete all items in the sub-collection first (Firestore won't cascade)
     const itemsSnap = await getDocs(collection(db, 'restaurants', user.uid, 'categories', catId, 'items'));
     const deletePromises = itemsSnap.docs.map(d => deleteDoc(d.ref));
@@ -206,7 +208,7 @@ function ItemFormModal({ catId, userId, item, onClose }) {
   };
 
   const handleSave = async () => {
-    if (!name.trim() || !price) return;
+    if (!name.trim() || price === '' || price === null || price === undefined) return;
     setLoading(true);
     const data = {
       name: name.trim(), description, price: parseFloat(price), image, isVeg, available,

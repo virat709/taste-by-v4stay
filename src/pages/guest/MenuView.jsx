@@ -112,9 +112,15 @@ export default function MenuView() {
 
   const getQty = (id) => cart.reduce((s, i) => s + (i.id === id ? i.qty : 0), 0);
 
+  const toastTimeout = useRef(null);
+
   const showToast = (msg, type = 'success') => {
+    if (toastTimeout.current) clearTimeout(toastTimeout.current);
     setToast({ msg, type });
-    setTimeout(() => setToast(null), 3500);
+    toastTimeout.current = setTimeout(() => {
+      setToast(null);
+      toastTimeout.current = null;
+    }, 3500);
   };
 
   const placeOrder = async (method = 'Cash') => {
@@ -126,7 +132,7 @@ export default function MenuView() {
         items: cart.map(i => ({
           id: i.id, name: i.name, price: i.price, qty: i.qty,
           modifiers: i.modifiers || [],
-          basePrice: i.basePrice || i.price
+          basePrice: i.basePrice ?? i.price
         })),
         subtotal: cartTotal,
         taxAmount,
@@ -176,7 +182,7 @@ export default function MenuView() {
   const filteredCategories = searchQuery.trim()
     ? categories.map(c => ({
         ...c,
-        items: c.items.filter(i => i.name.toLowerCase().includes(searchQuery.toLowerCase()))
+        items: (c.items || []).filter(i => i.name.toLowerCase().includes(searchQuery.toLowerCase()))
       })).filter(c => c.items.length > 0)
     : categories;
 
@@ -279,8 +285,9 @@ export default function MenuView() {
                     }
                   }}
                   onRemove={() => {
-                    const entry = cart.find(i => i.id === item.id && (!i.modifiers || i.modifiers.length === 0));
-                    removeFromCart(entry?.cartKey || item.id);
+                    const entry = cart.find(i => i.id === item.id && (!i.modifiers || i.modifiers.length === 0))
+                      ?? cart.find(i => i.id === item.id);
+                    if (entry) removeFromCart(entry.cartKey);
                   }} />
               ))}
             </div>
@@ -490,7 +497,7 @@ export default function MenuView() {
                 }
                 const selectedModifiers = itemOptions.flatMap(g => {
                   const indices = g.type === 'single' ? (g.selected !== null ? [g.selected] : []) : g.selected;
-                  return indices.map(i => ({ groupName: g.groupName, optionName: g.options[i].name, price: g.options[i].price || 0 }));
+                  return indices.map(i => ({ groupName: g.groupName, optionName: g.options[i]?.name ?? 'Option', price: g.options[i]?.price ?? 0 }));
                 });
                 addToCart(item, selectedModifiers);
               }} style={{ width: '100%', marginTop: '24px', padding: '16px', background: 'linear-gradient(135deg, #ff4757, #ff6b81)', color: 'white', border: 'none', borderRadius: '14px', fontWeight: '800', fontSize: '1rem', cursor: 'pointer', fontFamily: 'inherit', boxShadow: '0 4px 16px rgba(255,71,87,0.35)' }}>
