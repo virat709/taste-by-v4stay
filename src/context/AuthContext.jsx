@@ -24,11 +24,23 @@ export function AuthProvider({ children }) {
     return unsub;
   }, []);
 
-  const login = (email, password) => signInWithEmailAndPassword(auth, email, password);
-  const signup = (email, password) => createUserWithEmailAndPassword(auth, email, password);
+  const login = async (email, password) => {
+    const cred = await signInWithEmailAndPassword(auth, email, password);
+    setUser(cred.user);
+    return cred;
+  };
+  const signup = async (email, password) => {
+    const cred = await createUserWithEmailAndPassword(auth, email, password);
+    setUser(cred.user);
+    return cred;
+  };
   const logout = () => signOut(auth);
   const resetPassword = (email) => sendPasswordResetEmail(auth, email);
-  const signInWithGoogle = () => signInWithPopup(auth, new GoogleAuthProvider());
+  const signInWithGoogle = async () => {
+    const cred = await signInWithPopup(auth, new GoogleAuthProvider());
+    setUser(cred.user);
+    return cred;
+  };
 
   return (
     <AuthContext.Provider value={{ user, loading, login, signup, logout, resetPassword, signInWithGoogle }}>

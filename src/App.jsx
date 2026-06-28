@@ -18,7 +18,8 @@ import LegalPage from './pages/LegalPage';
 import Contact from './pages/Contact';
 
 function ProtectedRoute({ children }) {
-  const { user } = useAuth();
+  const { user, loading } = useAuth();
+  if (loading) return null;
   return user ? children : <Navigate to="/auth" replace />;
 }
 
