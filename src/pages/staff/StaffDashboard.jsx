@@ -58,6 +58,8 @@ export default function StaffDashboard() {
     navigate('/staff');
   };
 
+  const pendingOrders = orders.filter(o => o.status === 'pending');
+
   useEffect(() => {
     if (pendingOrders.length > prevPendingCount.current && prevPendingCount.current > 0) {
       try { audioRef.current?.play(); } catch {}
@@ -68,7 +70,6 @@ export default function StaffDashboard() {
   if (!session) return null;
 
   const currency = restaurant?.currency || '₹';
-  const pendingOrders = orders.filter(o => o.status === 'pending');
 
   return (
     <div style={{ minHeight: '100vh', backgroundColor: 'var(--bg-color)', fontFamily: 'Outfit, sans-serif' }}>

@@ -1,13 +1,15 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { AdminLayout } from './Dashboard';
 import { useAuth } from '../../context/AuthContext';
 import { db } from '../../lib/firebase';
 import { doc, getDoc, updateDoc, collection, addDoc, serverTimestamp, onSnapshot, query, orderBy } from 'firebase/firestore';
-import { Save, Settings as SettingsIcon, Crown, CheckCircle, Copy, Check, Smartphone } from 'lucide-react';
+import { Save, Settings as SettingsIcon, Crown, CheckCircle, Copy, Check, Smartphone, CreditCard } from 'lucide-react';
 import { getEffectivePlan, getTrialDaysRemaining, PLAN_LABELS, PLAN_FEATURES, PROVIDER_UPI_ID, PREMIUM_PRICE, PREMIUM_PRICE_LABEL } from '../../lib/subscription';
 
 export default function Settings() {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const [formData, setFormData] = useState({
     name: '',
     phone: '',
@@ -25,6 +27,7 @@ export default function Settings() {
   const [paymentName, setPaymentName] = useState('');
   const [submittingPayment, setSubmittingPayment] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [razorpayLoading, setRazorpayLoading] = useState(false);
 
   useEffect(() => {
     if (!user) return;
@@ -85,6 +88,76 @@ export default function Settings() {
     } finally {
       setSubmittingPayment(false);
     }
+  };
+
+  const loadRazorpayScript = useCallback(() => {
+    return new Promise((resolve) => {
+      if (window.Razorpay) { resolve(true); return; }
+      const script = document.createElement('script');
+      script.src = 'https://checkout.razorpay.com/v1/checkout.js';
+      script.onload = () => resolve(true);
+      script.onerror = () => resolve(false);
+      document.body.appendChild(script);
+    });
+  }, []);
+
+  const handleRazorpayPayment = async () => {
+    const keyId = import.meta.env.VITE_RAZORPAY_KEY_ID;
+    if (!keyId) {
+      setMessage('Razorpay key not configured. Use UPI payment below.');
+      setTimeout(() => setMessage(''), 5000);
+      return;
+    }
+    setRazorpayLoading(true);
+    const loaded = await loadRazorpayScript();
+    if (!loaded) {
+      setMessage('Failed to load payment gateway. Use UPI payment below.');
+      setRazorpayLoading(false);
+      return;
+    }
+    const options = {
+      key: keyId,
+      amount: PREMIUM_PRICE * 100,
+      currency: 'INR',
+      name: 'Taste by v4stay',
+      description: 'Premium Plan - 1 Year',
+      prefill: {
+        email: user?.email || '',
+        contact: formData.phone || '',
+      },
+      theme: { color: '#ff4757' },
+      handler: async (response) => {
+        try {
+          await addDoc(collection(db, 'restaurants', user.uid, 'payments'), {
+            razorpayPaymentId: response.razorpay_payment_id,
+            razorpayOrderId: response.razorpay_order_id,
+            razorpaySignature: response.razorpay_signature,
+            amount: PREMIUM_PRICE,
+            status: 'approved',
+            createdAt: serverTimestamp(),
+          });
+          await updateDoc(doc(db, 'restaurants', user.uid), {
+            plan: 'paid',
+            upgradedAt: serverTimestamp(),
+          });
+          setMessage('Payment successful! Your account is now upgraded to Premium.');
+          setShowPaymentForm(false);
+          setTimeout(() => { setMessage(''); navigate('/admin'); }, 1500);
+        } catch (err) {
+          console.error('Payment record error:', err);
+          setMessage('Payment received but failed to update. Contact support.');
+        }
+      },
+      modal: {
+        ondismiss: () => setRazorpayLoading(false),
+      },
+    };
+    const rzp = new window.Razorpay(options);
+    rzp.on('payment.failed', (response) => {
+      setMessage('Payment failed. Please try again.');
+      setRazorpayLoading(false);
+    });
+    rzp.open();
   };
 
   const handleChange = (e) => {
@@ -150,9 +223,16 @@ export default function Settings() {
             </div>
             {getEffectivePlan(formData) !== 'paid' && !showPaymentForm && (
               <div>
-                <button type="button" onClick={() => setShowPaymentForm(true)} style={{ padding: '12px 28px', background: 'linear-gradient(135deg, #ff4757, #ff6b81)', border: 'none', borderRadius: '12px', color: 'white', fontWeight: '800', fontSize: '0.95rem', cursor: 'pointer', fontFamily: 'inherit', boxShadow: '0 4px 16px rgba(255,71,87,0.3)' }}>
-                  Upgrade to Premium — ₹14,999/year
-                </button>
+                <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
+                  <button type="button" onClick={handleRazorpayPayment} disabled={razorpayLoading}
+                    style={{ padding: '14px 32px', background: 'linear-gradient(135deg, #ff4757, #ff6b81)', border: 'none', borderRadius: '12px', color: 'white', fontWeight: '800', fontSize: '0.95rem', cursor: razorpayLoading ? 'not-allowed' : 'pointer', fontFamily: 'inherit', boxShadow: '0 4px 16px rgba(255,71,87,0.3)', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <CreditCard size={20} /> {razorpayLoading ? 'Opening...' : 'Pay Online — ₹14,999'}
+                  </button>
+                  <button type="button" onClick={() => setShowPaymentForm(true)}
+                    style={{ padding: '14px 24px', background: 'transparent', border: '2px solid var(--border)', borderRadius: '12px', color: 'var(--text-muted)', fontWeight: '700', fontSize: '0.9rem', cursor: 'pointer', fontFamily: 'inherit', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <Smartphone size={18} /> Pay via UPI (Manual)
+                  </button>
+                </div>
 
                 {/* Show existing payment requests */}
                 {paymentRequests.length > 0 && (
@@ -160,7 +240,7 @@ export default function Settings() {
                     <div style={{ fontSize: '0.85rem', fontWeight: '600', color: 'var(--text-muted)', marginBottom: '8px' }}>Payment History</div>
                     {paymentRequests.map(p => (
                       <div key={p.id} style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '10px 14px', background: 'var(--bg-color)', borderRadius: '10px', marginBottom: '6px', fontSize: '0.85rem' }}>
-                        <span style={{ fontWeight: '600' }}>UTR: {p.utr}</span>
+                        <span style={{ fontWeight: '600' }}>{p.razorpayPaymentId ? `Razorpay: ${p.razorpayPaymentId.slice(0, 12)}...` : `UTR: ${p.utr}`}</span>
                         <span style={{ marginLeft: 'auto', padding: '3px 10px', borderRadius: '50px', fontSize: '0.75rem', fontWeight: '700', background: p.status === 'approved' ? 'rgba(46,213,115,0.15)' : p.status === 'rejected' ? 'rgba(255,71,87,0.15)' : 'rgba(255,159,67,0.15)', color: p.status === 'approved' ? '#2ed573' : p.status === 'rejected' ? '#ff4757' : '#ff9f43' }}>
                           {p.status === 'approved' ? 'Approved' : p.status === 'rejected' ? 'Rejected' : 'Pending'}
                         </span>
