@@ -1,6 +1,7 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft } from 'lucide-react';
+import { Helmet } from 'react-helmet-async';
 
 const pages = {
   terms: {
@@ -63,6 +64,11 @@ export default function LegalPage({ page }) {
 
   return (
     <div style={{ minHeight: '100vh', background: 'var(--bg-color)' }}>
+      <Helmet>
+        <title>{data.title} | Taste by v4stay</title>
+        <meta name="description" content={`Read our ${data.title} to understand our policies.`} />
+        <link rel="canonical" href={`https://yourdomain.com/${page}`} />
+      </Helmet>
       {/* Header */}
       <header style={{ padding: '16px 40px', display: 'flex', alignItems: 'center', gap: '12px', background: 'var(--surface)', borderBottom: '1px solid var(--border)', position: 'sticky', top: 0, zIndex: 10 }}>
         <button onClick={() => navigate(-1)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)', padding: '6px', display: 'flex' }}>
@@ -90,7 +96,13 @@ export default function LegalPage({ page }) {
 
       {/* Footer */}
       <footer style={{ padding: '24px 40px', borderTop: '1px solid var(--border)', textAlign: 'center', color: 'var(--text-muted)', fontSize: '0.85rem', background: 'var(--surface)' }}>
-        © 2026 Taste by v4stay — <span style={{ cursor: 'pointer', color: 'var(--primary)' }} onClick={() => navigate('/terms')}>Terms</span> · <span style={{ cursor: 'pointer', color: 'var(--primary)' }} onClick={() => navigate('/privacy')}>Privacy</span> · <span style={{ cursor: 'pointer', color: 'var(--primary)' }} onClick={() => navigate('/contact')}>Contact</span>
+        <div style={{ display: 'flex', justifyContent: 'center', gap: '20px', marginBottom: '12px', flexWrap: 'wrap' }}>
+          <span style={{ cursor: 'pointer', color: 'var(--primary)', fontWeight: '600' }} onClick={() => navigate('/about')}>About</span>
+          <span style={{ cursor: 'pointer', color: 'var(--primary)', fontWeight: '600' }} onClick={() => navigate('/terms')}>Terms</span>
+          <span style={{ cursor: 'pointer', color: 'var(--primary)', fontWeight: '600' }} onClick={() => navigate('/privacy')}>Privacy</span>
+          <span style={{ cursor: 'pointer', color: 'var(--primary)', fontWeight: '600' }} onClick={() => navigate('/contact')}>Contact</span>
+        </div>
+        © 2026 Taste by v4stay — Smart Digital Menus for Restaurants
       </footer>
     </div>
   );

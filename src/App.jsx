@@ -1,4 +1,5 @@
 import React from 'react';
+import { HelmetProvider } from 'react-helmet-async';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import ErrorBoundary from './components/ErrorBoundary';
@@ -17,6 +18,7 @@ import StaffDashboard from './pages/staff/StaffDashboard';
 import KitchenDisplay from './pages/kitchen/KitchenDisplay';
 import LegalPage from './pages/LegalPage';
 import Contact from './pages/Contact';
+import About from './pages/About';
 
 function ProtectedRoute({ children }) {
   const { user, loading } = useAuth();
@@ -43,6 +45,7 @@ function AppRoutes() {
       <Route path="/terms" element={<LegalPage page="terms" />} />
       <Route path="/privacy" element={<LegalPage page="privacy" />} />
       <Route path="/contact" element={<Contact />} />
+      <Route path="/about" element={<About />} />
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   );
@@ -50,13 +53,15 @@ function AppRoutes() {
 
 function App() {
   return (
-    <BrowserRouter>
-      <ErrorBoundary>
-        <AuthProvider>
-          <AppRoutes />
-        </AuthProvider>
-      </ErrorBoundary>
-    </BrowserRouter>
+    <HelmetProvider>
+      <BrowserRouter>
+        <ErrorBoundary>
+          <AuthProvider>
+            <AppRoutes />
+          </AuthProvider>
+        </ErrorBoundary>
+      </BrowserRouter>
+    </HelmetProvider>
   );
 }
 

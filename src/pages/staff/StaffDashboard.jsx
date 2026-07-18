@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { doc, onSnapshot, collection, query, orderBy, updateDoc } from 'firebase/firestore';
 import { db } from '../../lib/firebase';
 import { LogOut, CheckCircle2 } from 'lucide-react';
+import { printKitchenTicket } from '../../components/ReceiptTemplate';
 
 export default function StaffDashboard() {
   const navigate = useNavigate();
@@ -51,6 +52,11 @@ export default function StaffDashboard() {
   const updateStatus = async (orderId, status) => {
     if (!session?.restaurantId) return;
     await updateDoc(doc(db, 'restaurants', session.restaurantId, 'orders', orderId), { status });
+  };
+
+  const markSentToKitchen = async (orderId) => {
+    if (!session?.restaurantId) return;
+    await updateDoc(doc(db, 'restaurants', session.restaurantId, 'orders', orderId), { sentToKitchen: true });
   };
 
   const handleLogout = () => {
@@ -110,7 +116,7 @@ export default function StaffDashboard() {
             </div>
           ) : (
             orders.map(order => (
-              <StaffOrderCard key={order.id} order={order} currency={currency} onUpdateStatus={updateStatus} />
+              <StaffOrderCard key={order.id} order={order} currency={currency} onUpdateStatus={updateStatus} onMarkSentToKitchen={markSentToKitchen} />
             ))
           )}
         </div>
@@ -119,10 +125,10 @@ export default function StaffDashboard() {
   );
 }
 
-function StaffOrderCard({ order, currency, onUpdateStatus }) {
+function StaffOrderCard({ order, currency, onUpdateStatus, onMarkSentToKitchen }) {
   const statusConfig = {
-    pending: { label: 'Pending', color: '#ff9f43', next: 'preparing', nextLabel: 'Start Preparing' },
-    preparing: { label: 'Preparing', color: '#1e90ff', next: 'ready', nextLabel: 'Mark Ready' },
+    pending: { label: 'Pending', color: '#ff9f43', next: 'preparing', nextLabel: 'Start' },
+    preparing: { label: 'Preparing', color: '#1e90ff', next: 'ready', nextLabel: 'Ready' },
     ready: { label: 'Ready', color: '#2ed573', next: 'completed', nextLabel: 'Serve' },
     completed: { label: 'Done', color: '#a4b0be', next: null },
     cancelled: { label: 'Cancelled', color: '#ff4757', next: null },
@@ -130,49 +136,124 @@ function StaffOrderCard({ order, currency, onUpdateStatus }) {
   const cfg = statusConfig[order.status] || statusConfig.pending;
   const time = order.createdAt?.toDate?.()?.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 
+  const isSent = order.sentToKitchen;
+  const kitchenBtnBg = isSent 
+    ? 'linear-gradient(135deg, #ff9f43, #ff6b35)' // Orange
+    : 'linear-gradient(135deg, #2ed573, #26af5f)'; // Green
+  const kitchenBtnShadow = isSent
+    ? '0 2px 6px rgba(255,159,67,0.15)'
+    : '0 2px 6px rgba(46,213,115,0.15)';
+  const kitchenBtnText = isSent ? 'Sent' : 'Kitchen';
+
+  const handleKitchenPrint = () => {
+    printKitchenTicket(order);
+    if (onMarkSentToKitchen) {
+      onMarkSentToKitchen(order.id);
+    }
+  };
+
   return (
-    <div style={{ background: 'var(--surface)', border: `1px solid ${order.status === 'pending' ? '#ff4757' : order.status === 'preparing' ? '#1e90ff' : 'var(--border)'}`, borderRadius: '16px', padding: '20px', display: 'flex', alignItems: 'center', gap: '16px', flexWrap: 'wrap', boxShadow: order.status === 'pending' ? '0 4px 16px rgba(255,71,87,0.1)' : order.status === 'preparing' ? '0 4px 16px rgba(30,144,255,0.1)' : 'none' }}>
-      <div style={{ flex: 1, minWidth: '250px' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '8px' }}>
-          <span style={{ fontWeight: '800', fontSize: '1.2rem' }}>Table {order.tableNumber}</span>
-          <span style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>{time}</span>
-          <span style={{ background: `${cfg.color}18`, color: cfg.color, borderRadius: '50px', padding: '4px 10px', fontSize: '0.75rem', fontWeight: '800', textTransform: 'uppercase' }}>{cfg.label}</span>
-        </div>
-        
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-          {order.items?.map((item, idx) => (
-            <div key={idx} style={{ fontSize: '1rem' }}>
-              <span style={{ fontWeight: '600' }}><span style={{ color: 'var(--text-muted)', marginRight: '8px' }}>{item.qty}x</span> {item.name}</span>
-              {item.modifiers?.length > 0 && (
-                <span style={{ fontSize: '0.82rem', color: 'var(--text-muted)', marginLeft: '6px' }}>
-                  ({item.modifiers.map(m => m.optionName).join(', ')})
-                </span>
-              )}
-            </div>
-          ))}
+    <div style={{ background: 'var(--surface)', border: `1px solid ${order.status === 'pending' ? '#ff4757' : order.status === 'preparing' ? '#1e90ff' : 'var(--border)'}`, borderRadius: '12px', padding: '12px 20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '16px', flexWrap: 'nowrap', minHeight: '56px', boxShadow: order.status === 'pending' ? '0 2px 8px rgba(255,71,87,0.05)' : 'none' }}>
+      {/* Left side: Table Number & Items List */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flex: 1, minWidth: 0 }}>
+        {/* Table badge with icon */}
+        <div style={{ 
+          background: 'rgba(255, 71, 87, 0.08)', 
+          color: 'var(--primary)', 
+          padding: '5px 10px', 
+          borderRadius: '8px', 
+          fontSize: '0.88rem', 
+          fontWeight: '800', 
+          whiteSpace: 'nowrap',
+          display: 'flex',
+          alignItems: 'center',
+          gap: '3px'
+        }}>
+          🪑 {order.tableNumber || '?'}
         </div>
 
-        {order.instructions && (
-          <div style={{ marginTop: '8px', fontSize: '0.85rem', background: 'rgba(255,71,87,0.06)', padding: '6px 10px', borderRadius: '8px', color: 'var(--text-muted)', display: 'inline-block' }}>
-            📝 {order.instructions}
+        {/* Inline Items List */}
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div style={{ fontSize: '0.94rem', fontWeight: '500', color: 'var(--text-main)', textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap' }}>
+            {order.items?.map((item, idx) => (
+              <span key={idx}>
+                {idx > 0 && ', '}
+                <span style={{ fontWeight: '700' }}>{item.qty}x</span> {item.name}
+                {item.modifiers?.length > 0 && ` (${item.modifiers.map(m => m.optionName).join(', ')})`}
+              </span>
+            ))}
           </div>
-        )}
-        
-        {order.paymentMethod === 'UPI' && (
-          <div style={{ marginTop: '12px', display: 'inline-block', background: 'rgba(46,213,115,0.1)', color: '#2ed573', padding: '4px 10px', borderRadius: '6px', fontSize: '0.8rem', fontWeight: '700' }}>
-            Paid via UPI
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '1px' }}>
+            {order.instructions && (
+              <span style={{ fontSize: '0.82rem', color: '#ff4757', fontWeight: '600', textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap' }}>
+                📝 {order.instructions}
+              </span>
+            )}
+            {order.paymentMethod === 'UPI' && (
+              <span style={{ background: 'rgba(46,213,115,0.08)', color: '#2ed573', padding: '1px 5px', borderRadius: '4px', fontSize: '0.72rem', fontWeight: '700' }}>
+                UPI Paid
+              </span>
+            )}
           </div>
-        )}
+        </div>
       </div>
 
-      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '12px', borderLeft: '1px solid var(--border)', paddingLeft: '20px' }}>
+      {/* Right side: Actions & Status */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexShrink: 0 }}>
+        <span style={{ 
+          background: `${cfg.color}10`, 
+          color: cfg.color, 
+          borderRadius: '6px', 
+          padding: '4px 10px', 
+          fontSize: '0.8rem', 
+          fontWeight: '800', 
+          textTransform: 'uppercase',
+          border: `1px solid ${cfg.color}18`
+        }}>
+          {cfg.label}
+        </span>
+        
         {cfg.next ? (
-          <button onClick={() => onUpdateStatus(order.id, cfg.next)} style={{ background: cfg.next === 'ready' ? '#2ed573' : cfg.next === 'completed' ? '#a4b0be' : 'var(--primary)', color: 'white', border: 'none', borderRadius: '12px', padding: '12px 24px', cursor: 'pointer', fontSize: '1rem', fontWeight: '700', fontFamily: 'inherit', width: '100%', whiteSpace: 'nowrap', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}>
+          <button onClick={() => onUpdateStatus(order.id, cfg.next)} style={{ 
+            background: cfg.next === 'ready' ? '#2ed573' : cfg.next === 'completed' ? '#a4b0be' : 'var(--primary)', 
+            border: 'none', 
+            borderRadius: '8px', 
+            padding: '6px 14px', 
+            cursor: 'pointer', 
+            fontSize: '0.85rem', 
+            fontWeight: '700', 
+            fontFamily: 'inherit', 
+            color: 'white', 
+            whiteSpace: 'nowrap',
+            boxShadow: '0 2px 6px rgba(0,0,0,0.1)'
+          }}>
             {cfg.nextLabel}
           </button>
         ) : (
-          <div style={{ color: 'var(--text-muted)', fontWeight: '600', padding: '12px' }}>Order Completed</div>
+          <span style={{ color: 'var(--text-muted)', fontSize: '0.85rem', fontWeight: '600' }}>Done</span>
         )}
+
+        <button onClick={handleKitchenPrint} style={{ 
+          background: kitchenBtnBg, 
+          border: 'none', 
+          borderRadius: '8px', 
+          padding: '6px 14px', 
+          cursor: 'pointer', 
+          fontSize: '0.85rem', 
+          fontWeight: '700', 
+          fontFamily: 'inherit', 
+          color: 'white', 
+          display: 'flex', 
+          alignItems: 'center', 
+          gap: '4px', 
+          boxShadow: kitchenBtnShadow 
+        }}>
+          {kitchenBtnText}
+        </button>
+
+        <span style={{ color: 'var(--text-muted)', fontSize: '0.85rem', fontWeight: '500', minWidth: '60px', textAlign: 'right' }}>
+          {time}
+        </span>
       </div>
     </div>
   );

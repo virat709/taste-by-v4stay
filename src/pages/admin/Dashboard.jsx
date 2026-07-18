@@ -4,7 +4,7 @@ import { LayoutDashboard, UtensilsCrossed, Grid2x2, LogOut, Bell, BarChart3, Set
 import { useAuth } from '../../context/AuthContext';
 import { doc, onSnapshot, collection, query, orderBy, updateDoc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { db } from '../../lib/firebase';
-import { printReceipt } from '../../components/ReceiptTemplate';
+import { printReceipt, printKitchenTicket } from '../../components/ReceiptTemplate';
 import { getEffectivePlan, getTrialDaysRemaining, PLAN_LABELS } from '../../lib/subscription';
 
 // ─── Shared Layout ─────────────────────────────────────────────────────────────
@@ -68,7 +68,7 @@ export function AdminLayout({ children, restaurantName }) {
   );
 
   return (
-    <div style={{ display: 'flex', minHeight: '100vh', backgroundColor: 'var(--bg-color)', fontFamily: 'Outfit, sans-serif' }}>
+    <div style={{ display: 'flex', height: '100vh', overflow: 'hidden', backgroundColor: 'var(--bg-color)', fontFamily: 'Outfit, sans-serif' }}>
       {/* Sidebar Overlay (mobile) */}
       <div className={`admin-sidebar-overlay ${sidebarOpen ? 'show' : ''}`} onClick={() => setSidebarOpen(false)} />
 
@@ -89,7 +89,7 @@ export function AdminLayout({ children, restaurantName }) {
         <div style={{ width: '36px' }} />
       </div>
 
-      <main className="admin-main" style={{ flex: 1, padding: '36px', overflowY: 'auto', minHeight: '100vh' }}>
+      <main className="admin-main" style={{ flex: 1, padding: '36px', overflowY: 'auto', height: '100vh' }}>
         {children}
       </main>
 
@@ -178,73 +178,89 @@ export default function Dashboard() {
     await updateDoc(doc(db, 'restaurants', user.uid, 'orders', orderId), { status });
   };
 
+  const markSentToKitchen = async (orderId) => {
+    await updateDoc(doc(db, 'restaurants', user.uid, 'orders', orderId), { sentToKitchen: true });
+  };
+
   const hour = new Date().getHours();
   const greeting = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening';
 
   return (
     <AdminLayout restaurantName={restaurant?.name}>
       <audio ref={audioRef} src="data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACAf39/f4B/f3+AgH9/f3+AgH9/f3+AgH9/f3+AgH9/f3+AgH9/f3+AgH9/f3+AgH9/f3+AgH9/f3+AgH9/f3+AgH9/f3+AgH9/f3+AgH9/f3+AgH9/f3+AgH9/f3+AgH9/f3+AgH9/f3+AgH9/f3+AgH9/f3+AgH9/f3+AgH9/f3+AgH9/f3+AgH9/f3+AgH9/f3+AgH9/f3+AgH9/f3+AgH9/f3+AgH9/f3+AgH9/f3+AgH9/f3+AgH9/f3+AgH9/f3+AgH9/f3+AgH9/f3+AgH9/f3+AgH9/f3+AgH9/f3+AgH9/f3+AgH9/f3+AgH9/f3+AgH9/f3+AgH9/f3+AgH9/f3+AgH9/f3+AgH9/f3+AgH9/f3+AgH9/f3+AgH9/f3+AgH9/f3+AgH9/f3+AgH9/f3+AgH9/f3+AgH9/f3+AgH9/f3+AgH9/f3+AgH9/f3+AgH9/f3+AgH9/f3+AgH9/f3+AgH9/f3+AgH9/f3+AgH9/f3+AgH9/f3+AgH9/f3+AgH9/f3+AgH9/f3+AgH9/f3+AgH9/f3+AgH9/f3+AgH9/f3+AgH9/f3+AgH9/f3+AgH9/f3+AgH9/f3+AgH9/f3+AgH9/f3+AgH9/f3+AgH9/f3+AgH9/f3+AgH9/f3+AgH9/f3+AgH9/f3+AgH9/f3+AgH9/f3+AgH9/f3+AgH9/f3+AgH9/f3+AgH9/f3+AgH9/f3+AgH9/f3+AgH9/f3+AgH9/f3+AgH9/f3+AgH9/f3+AgH9/f3+AgH9/f3+AgH9/f3+AgH9/f3+AgH9/f3+AgH9/f3+AgH9/f3+AgH9/f3+AgH9/f3+AgH9/f3+AgH9/f3+AgH9/f3+AgH9/f3+AgH9/f3+AgH9/f3+AgH9/f3+AgH9/f3+AgH9/f3+AgH9/f3+AgH9/f3+AgH9/f3+AgH9/f3+AgH9/f3+AgH9/f3+AgH9/f3+AgH9/f3+AgH9/f3+AgH9/f3+AgH9/f3+AgH9/f3+AgH9/f3+AgH9/f3+AgH9/f3+AgH9/f3+AgH9/f3+AgH9/f3+AgH9/f3+AgH9/f3+AgH9/f3+AgH9/f3+AgH9/f3+AgH9/f3+AgH9/f3+AgH9/f3+AgH9/f3+AgH9/f3+AgH9/f3+AgH9/f3+AgH9/f3+AgH9/f3+AgH9/f3+AgH9/f3+AgH9/f3+AgH9/f3+AgH9/f3+AgH9/f3+AgH9/f3+AgH9/f3+AgH9/f3+AgH9/f3+AgH9/f3+AgH9/f3+AgH9/f3+AgH9/f3+AgH9/f3+AgH9/f3+AgH9/f3+AgH9/f3+AgH9/f3+AgH9/f3+AgH9/f3+AgH9/f3+AgH9/f3+AgH9/f3+AgH9/f3+AgH9/f3+AgH9/f3+AgH9/f3+AgH9/f3+AgH9/f3+AgH9/f3+AgH9/f3+AgH9/f3+AgH9/f3+AgH9/f3+AgH9/f3+AgH9/f3+AgH9/f3+AgH9/f3+AgH9/f3+AgH9/f3+AgH9/f3+AgH9/f3+AgH9/f3+AgH9/f3+AgH9/f3+AgH9/f3+AgH9/f3+AgH9/f3+Ag" />
-      {/* Plan Banner */}
-      {restaurant && (() => {
-        const effective = getEffectivePlan(restaurant);
-        const planLabel = PLAN_LABELS[effective]?.label || 'Free';
-        const daysLeft = getTrialDaysRemaining(restaurant);
-        if (effective === 'paid') return null;
-        return (
-          <div style={{ marginBottom: '20px', padding: '14px 20px', borderRadius: '16px', background: effective === 'trial' ? 'rgba(30,144,255,0.08)' : 'rgba(255,71,87,0.08)', border: `1px solid ${effective === 'trial' ? 'rgba(30,144,255,0.2)' : 'rgba(255,71,87,0.2)'}`, display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-              <span style={{ fontWeight: '700', fontSize: '0.9rem', color: effective === 'trial' ? '#1e90ff' : '#ff4757' }}>{effective === 'trial' ? `🔷 Free Trial — ${daysLeft} day${daysLeft !== 1 ? 's' : ''} remaining` : '⚠️ Trial Expired — Free Plan'}</span>
-            </div>
-            <div style={{ display: 'flex', gap: '8px' }}>
-              {effective === 'free' && (
-                <button onClick={() => navigate('/admin/settings')} style={{ padding: '8px 20px', background: 'linear-gradient(135deg, #ff4757, #ff6b81)', border: 'none', borderRadius: '10px', color: 'white', fontWeight: '700', fontSize: '0.85rem', cursor: 'pointer', fontFamily: 'inherit' }}>
-                  Upgrade to Premium — ₹14,999/yr
-                </button>
-              )}
-            </div>
-          </div>
-        );
-      })()}
-
-      <div style={{ marginBottom: '28px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '16px' }}>
-        <div>
-          <h1 style={{ fontSize: '1.9rem', fontWeight: '800', marginBottom: '4px' }}>
+      {/* Mini Top Row: Greeting, Trial Badge & Preview Button */}
+      <div style={{ marginBottom: '14px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+          <h1 style={{ fontSize: '1.25rem', fontWeight: '800' }}>
             {greeting}, {restaurant?.name || 'Restaurant'} 👋
           </h1>
-          <p style={{ color: 'var(--text-muted)' }}>Here's a snapshot of today's activity.</p>
+          {restaurant && (() => {
+            const effective = getEffectivePlan(restaurant);
+            if (effective === 'paid') return null;
+            return (
+              <span style={{ 
+                fontSize: '0.72rem', 
+                fontWeight: '700', 
+                background: 'rgba(255,71,87,0.08)', 
+                color: '#ff4757', 
+                padding: '3px 8px', 
+                borderRadius: '6px', 
+                border: '1px solid rgba(255,71,87,0.12)',
+                display: 'inline-flex',
+                alignItems: 'center',
+                cursor: 'pointer'
+              }} onClick={() => navigate('/admin/settings')}>
+                Trial Expired — Upgrade
+              </span>
+            );
+          })()}
         </div>
-        <button onClick={() => window.open(`/menu/${user.uid}/1`, '_blank')} className="btn-secondary" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <ExternalLink size={18} /> Preview Menu
+        <button onClick={() => window.open(`/menu/${user.uid}/1`, '_blank')} className="btn-secondary" style={{ padding: '6px 14px', borderRadius: '8px', fontSize: '0.82rem', height: '32px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+          <ExternalLink size={14} /> Preview Menu
         </button>
       </div>
 
-      {/* Stats */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '20px', marginBottom: '32px' }}>
-        <StatCard label="Today's Orders" value={todayOrders.length} sub={`${pendingOrders.length} pending`} color="#ff4757" />
-        <StatCard label="Today's Revenue" value={`${currency}${todayRevenue.toFixed(2)}`} sub="Today total" color="#2ed573" />
-        <StatCard label="Total Orders" value={orders.length} sub="All time" color="#1e90ff" />
+      {/* Mini Stats Bar */}
+      <div style={{ display: 'flex', gap: '16px', marginBottom: '16px', background: 'var(--surface)', borderRadius: '12px', padding: '8px 16px', border: '1px solid var(--border)', flexWrap: 'wrap', alignItems: 'center' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.85rem' }}>
+          <span style={{ color: 'var(--text-muted)', fontWeight: '600' }}>Today's Orders:</span>
+          <span style={{ fontWeight: '800' }}>{todayOrders.length}</span>
+          <span style={{ fontSize: '0.72rem', background: '#ff475715', color: '#ff4757', padding: '1px 5px', borderRadius: '4px', fontWeight: '700' }}>{pendingOrders.length} pending</span>
+        </div>
+        <div style={{ width: '1px', height: '14px', background: 'var(--border)' }} />
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.85rem' }}>
+          <span style={{ color: 'var(--text-muted)', fontWeight: '600' }}>Today's Revenue:</span>
+          <span style={{ fontWeight: '800', color: '#2ed573' }}>{currency}{todayRevenue.toFixed(0)}</span>
+        </div>
+        <div style={{ width: '1px', height: '14px', background: 'var(--border)' }} />
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.85rem' }}>
+          <span style={{ color: 'var(--text-muted)', fontWeight: '600' }}>Total Orders:</span>
+          <span style={{ fontWeight: '800', color: '#1e90ff' }}>{orders.length}</span>
+        </div>
       </div>
 
-      {/* Live Orders */}
-      <div style={{ background: 'var(--surface)', borderRadius: '20px', border: '1px solid var(--border)', overflow: 'hidden' }}>
-        <div style={{ padding: '18px 24px', borderBottom: '1px solid var(--border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <h2 style={{ fontSize: '1.1rem', fontWeight: '700' }}>Live Orders</h2>
-          <span style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.82rem', color: 'var(--text-muted)' }}>
-            <span style={{ width: '8px', height: '8px', background: '#2ed573', borderRadius: '50%', display: 'inline-block', animation: 'pulse 2s infinite' }} />
+      {/* Live Orders Card */}
+      <div style={{ background: 'var(--surface)', borderRadius: '16px', border: '1px solid var(--border)', overflow: 'hidden' }}>
+        <div style={{ padding: '12px 18px', borderBottom: '1px solid var(--border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <h2 style={{ fontSize: '0.95rem', fontWeight: '700' }}>Live Orders & History</h2>
+          <span style={{ display: 'flex', alignItems: 'center', gap: '5px', fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+            <span style={{ width: '6px', height: '6px', background: '#2ed573', borderRadius: '50%', display: 'inline-block', animation: 'pulse 2s infinite' }} />
             Real-time
           </span>
         </div>
-        {orders.length === 0 ? (
-          <div style={{ padding: '60px 24px', textAlign: 'center', color: 'var(--text-muted)' }}>
-            <Bell size={48} style={{ marginBottom: '16px', opacity: 0.2 }} />
-            <h3 style={{ marginBottom: '8px', fontWeight: '600' }}>No orders yet</h3>
-            <p>Orders placed by guests will appear here in real time.</p>
-          </div>
-        ) : (
-          orders.slice(0, 20).map(order => (
-            <OrderRow key={order.id} order={order} restaurant={restaurant} currency={currency} onUpdateStatus={updateStatus} />
-          ))
-        )}
+        <div style={{ maxHeight: 'calc(100vh - 220px)', overflowY: 'auto' }}>
+          {orders.length === 0 ? (
+            <div style={{ padding: '60px 24px', textAlign: 'center', color: 'var(--text-muted)' }}>
+              <Bell size={48} style={{ marginBottom: '16px', opacity: 0.2 }} />
+              <h3 style={{ marginBottom: '8px', fontWeight: '600' }}>No orders yet</h3>
+              <p>Orders placed by guests will appear here in real time.</p>
+            </div>
+          ) : (
+            orders.slice(0, 20).map(order => (
+              <OrderRow key={order.id} order={order} restaurant={restaurant} currency={currency} onUpdateStatus={updateStatus} onMarkSentToKitchen={markSentToKitchen} />
+            ))
+          )}
+        </div>
       </div>
     </AdminLayout>
   );
@@ -260,60 +276,163 @@ function StatCard({ label, value, sub, color }) {
   );
 }
 
-function OrderRow({ order, restaurant, currency, onUpdateStatus }) {
+function OrderRow({ order, restaurant, currency, onUpdateStatus, onMarkSentToKitchen }) {
   const statusConfig = {
-    pending: { label: 'Pending', color: '#ff9f43', next: 'preparing', nextLabel: 'Start Preparing' },
-    preparing: { label: 'Preparing', color: '#1e90ff', next: 'ready', nextLabel: 'Mark Ready' },
-    ready: { label: 'Ready', color: '#2ed573', next: 'completed', nextLabel: 'Serve & Complete' },
+    pending: { label: 'Pending', color: '#ff9f43', next: 'preparing', nextLabel: 'Start' },
+    preparing: { label: 'Preparing', color: '#1e90ff', next: 'ready', nextLabel: 'Ready' },
+    ready: { label: 'Ready', color: '#2ed573', next: 'completed', nextLabel: 'Complete' },
     completed: { label: 'Done', color: '#a4b0be', next: null },
     cancelled: { label: 'Cancelled', color: '#ff4757', next: null },
   };
   const cfg = statusConfig[order.status] || statusConfig.pending;
   const time = order.createdAt?.toDate?.()?.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 
+  const isSent = order.sentToKitchen;
+  const kitchenBtnBg = isSent 
+    ? 'linear-gradient(135deg, #ff9f43, #ff6b35)' // Orange
+    : 'linear-gradient(135deg, #2ed573, #26af5f)'; // Green
+  const kitchenBtnShadow = isSent
+    ? '0 2px 6px rgba(255,159,67,0.15)'
+    : '0 2px 6px rgba(46,213,115,0.15)';
+  const kitchenBtnText = isSent ? 'Sent' : 'Kitchen';
+
+  const handleKitchenPrint = () => {
+    printKitchenTicket(order);
+    if (onMarkSentToKitchen) {
+      onMarkSentToKitchen(order.id);
+    }
+  };
+
   return (
-    <div style={{ padding: '20px 24px', borderBottom: '1px solid var(--border)', display: 'flex', alignItems: 'center', gap: '20px', flexWrap: 'wrap' }}>
-      <div style={{ flex: 1 }}>
-        <div style={{ fontWeight: '800', fontSize: '1.1rem', marginBottom: '4px' }}>Table {order.tableNumber}</div>
-        <div style={{ fontSize: '0.95rem', color: 'var(--text-muted)' }}>
-          {order.items?.map(i => (
-            <div key={i.id || i.name} style={{ marginBottom: '2px' }}>
-              {i.name} ×{i.qty}
-              {i.modifiers?.length > 0 && (
-                <span style={{ fontSize: '0.82rem', color: 'var(--text-muted)', marginLeft: '6px' }}>
-                  ({i.modifiers.map(m => m.optionName).join(', ')})
-                </span>
-              )}
-            </div>
-          ))}
+    <div style={{ padding: '12px 20px', borderBottom: '1px solid var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '16px', flexWrap: 'nowrap', minHeight: '56px' }}>
+      {/* Left side: Table Number & Items List */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flex: 1, minWidth: 0 }}>
+        {/* Table badge with icon */}
+        <div style={{ 
+          background: 'rgba(255, 71, 87, 0.08)', 
+          color: 'var(--primary)', 
+          padding: '5px 10px', 
+          borderRadius: '8px', 
+          fontSize: '0.88rem', 
+          fontWeight: '800', 
+          whiteSpace: 'nowrap',
+          display: 'flex',
+          alignItems: 'center',
+          gap: '4px'
+        }}>
+          🪑 {order.tableNumber || '?'}
         </div>
-        {order.instructions && (
-          <div style={{ marginTop: '6px', fontSize: '0.85rem', background: 'rgba(255,71,87,0.06)', padding: '6px 10px', borderRadius: '8px', color: 'var(--text-muted)', display: 'inline-block' }}>
-            📝 {order.instructions}
+
+        {/* Inline Items List */}
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div style={{ fontSize: '0.94rem', fontWeight: '500', color: 'var(--text-main)', textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap' }}>
+            {order.items?.map((item, idx) => (
+              <span key={item.id || item.name}>
+                {idx > 0 && ', '}
+                <span style={{ fontWeight: '700' }}>{item.qty}x</span> {item.name}
+                {item.modifiers?.length > 0 && ` (${item.modifiers.map(m => m.optionName).join(', ')})`}
+              </span>
+            ))}
           </div>
-        )}
+          {order.instructions && (
+            <div style={{ fontSize: '0.82rem', color: '#ff4757', fontWeight: '600', textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap', marginTop: '2px' }}>
+              📝 {order.instructions}
+            </div>
+          )}
+        </div>
       </div>
-      <div style={{ display: 'flex', alignItems: 'center', gap: '16px', flexWrap: 'wrap' }}>
-        <span style={{ fontWeight: '800', fontSize: '1.1rem' }}>{currency}{(order.total || 0).toFixed(2)}</span>
-        <span style={{ background: `${cfg.color}18`, color: cfg.color, borderRadius: '50px', padding: '6px 16px', fontSize: '0.9rem', fontWeight: '800', textTransform: 'uppercase' }}>{cfg.label}</span>
+
+      {/* Right side: Price, Status & Actions */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexShrink: 0 }}>
+        <span style={{ fontWeight: '800', fontSize: '0.98rem', minWidth: '70px', textAlign: 'right' }}>
+          {currency}{(order.total || 0).toFixed(0)}
+        </span>
+        
+        <span style={{ 
+          background: `${cfg.color}10`, 
+          color: cfg.color, 
+          borderRadius: '6px', 
+          padding: '4px 10px', 
+          fontSize: '0.8rem', 
+          fontWeight: '800', 
+          textTransform: 'uppercase',
+          border: `1px solid ${cfg.color}18`
+        }}>
+          {cfg.label}
+        </span>
         
         {cfg.next && (
-          <button onClick={() => onUpdateStatus(order.id, cfg.next)} style={{ background: cfg.next === 'ready' ? '#2ed573' : cfg.next === 'completed' ? '#a4b0be' : 'var(--primary)', border: 'none', borderRadius: '12px', padding: '10px 24px', cursor: 'pointer', fontSize: '0.95rem', fontWeight: '800', fontFamily: 'inherit', color: 'white', boxShadow: '0 4px 12px rgba(0,0,0,0.15)' }}>
+          <button onClick={() => onUpdateStatus(order.id, cfg.next)} style={{ 
+            background: cfg.next === 'ready' ? '#2ed573' : cfg.next === 'completed' ? '#a4b0be' : 'var(--primary)', 
+            border: 'none', 
+            borderRadius: '8px', 
+            padding: '6px 14px', 
+            cursor: 'pointer', 
+            fontSize: '0.85rem', 
+            fontWeight: '700', 
+            fontFamily: 'inherit', 
+            color: 'white', 
+            whiteSpace: 'nowrap',
+            boxShadow: '0 2px 6px rgba(0,0,0,0.1)'
+          }}>
             {cfg.nextLabel}
           </button>
         )}
         
         {order.status === 'pending' && (
-          <button onClick={() => onUpdateStatus(order.id, 'cancelled')} style={{ background: 'transparent', border: '1px solid var(--border)', borderRadius: '12px', padding: '8px 16px', cursor: 'pointer', fontSize: '0.85rem', fontWeight: '600', fontFamily: 'inherit', color: 'var(--text-muted)' }}>
+          <button onClick={() => onUpdateStatus(order.id, 'cancelled')} style={{ 
+            background: 'transparent', 
+            border: '1px solid var(--border)', 
+            borderRadius: '8px', 
+            padding: '5px 12px', 
+            cursor: 'pointer', 
+            fontSize: '0.82rem', 
+            fontWeight: '600', 
+            fontFamily: 'inherit', 
+            color: 'var(--text-muted)' 
+          }}>
             Cancel
           </button>
         )}
 
-        <button onClick={() => printReceipt(order, restaurant)} style={{ background: 'var(--bg-color)', border: '2px solid var(--border)', borderRadius: '12px', padding: '8px 20px', cursor: 'pointer', fontSize: '0.95rem', fontWeight: '700', fontFamily: 'inherit', color: 'var(--text-main)', display: 'flex', alignItems: 'center', gap: '8px' }}>
-          🖨️ Print
+        <button onClick={handleKitchenPrint} style={{ 
+          background: kitchenBtnBg, 
+          border: 'none', 
+          borderRadius: '8px', 
+          padding: '6px 14px', 
+          cursor: 'pointer', 
+          fontSize: '0.85rem', 
+          fontWeight: '700', 
+          fontFamily: 'inherit', 
+          color: 'white', 
+          display: 'flex', 
+          alignItems: 'center', 
+          gap: '4px', 
+          boxShadow: kitchenBtnShadow 
+        }}>
+          {kitchenBtnText}
         </button>
 
-        <span style={{ color: 'var(--text-muted)', fontSize: '0.9rem', fontWeight: '600' }}>{time}</span>
+        <button onClick={() => printReceipt(order, restaurant)} style={{ 
+          background: 'var(--bg-color)', 
+          border: '1px solid var(--border)', 
+          borderRadius: '8px', 
+          padding: '6px 14px', 
+          cursor: 'pointer', 
+          fontSize: '0.85rem', 
+          fontWeight: '600', 
+          fontFamily: 'inherit', 
+          color: 'var(--text-main)', 
+          display: 'flex', 
+          alignItems: 'center', 
+          gap: '4px' 
+        }}>
+          Print
+        </button>
+
+        <span style={{ color: 'var(--text-muted)', fontSize: '0.85rem', fontWeight: '500', minWidth: '60px', textAlign: 'right' }}>
+          {time}
+        </span>
       </div>
     </div>
   );

@@ -9,11 +9,20 @@ import {
 import { QRCodeSVG } from 'qrcode.react';
 import { Plus, Trash2, Download, QrCode, Copy, Check } from 'lucide-react';
 
+const THEMES = [
+  { id: 'luxury', name: 'Dark Luxury', bg: ['#0f0c29', '#302b63', '#24243e'], border: '#ffd700', text: '#ffffff', accent: '#ffb142' },
+  { id: 'royal', name: 'Royal Crimson', bg: ['#4a0000', '#2a0000', '#1a0000'], border: '#ffb142', text: '#ffffff', accent: '#ffcc00' },
+  { id: 'forest', name: 'Forest Green', bg: ['#003314', '#00220d', '#001106'], border: '#b8e994', text: '#ffffff', accent: '#b8e994' },
+  { id: 'light', name: 'Pristine White', bg: ['#ffffff', '#f8f9fa', '#e9ecef'], border: '#cccccc', text: '#1a1a2e', accent: '#1e90ff' }
+];
+
 export default function TableManager() {
   const { user } = useAuth();
   const [tables, setTables] = useState([]);
+  const [restaurantName, setRestaurantName] = useState('');
   const [tableNumber, setTableNumber] = useState('');
   const [loading, setLoading] = useState(false);
+  const [selectedTheme, setSelectedTheme] = useState(THEMES[0]);
   const baseUrl = window.location.origin;
   const tablesRef = useRef(tables);
   tablesRef.current = tables;
@@ -21,9 +30,18 @@ export default function TableManager() {
   useEffect(() => {
     if (!user) return;
     const q = query(collection(db, 'restaurants', user.uid, 'tables'), orderBy('createdAt'));
-    return onSnapshot(q, snap => {
+    const unsubTables = onSnapshot(q, snap => {
       setTables(snap.docs.map(d => ({ id: d.id, ...d.data() })));
     });
+
+    const unsubRest = onSnapshot(doc(db, 'restaurants', user.uid), snap => {
+      if (snap.exists()) setRestaurantName(snap.data().restaurantName || snap.data().name || 'Our Restaurant');
+    });
+
+    return () => {
+      unsubTables();
+      unsubRest();
+    };
   }, [user]);
 
   const addTable = async () => {
@@ -98,6 +116,36 @@ export default function TableManager() {
         </div>
       </div>
 
+      {/* Theme Selector */}
+      <div style={{ background: 'var(--surface)', borderRadius: '20px', border: '1px solid var(--border)', padding: '24px', marginBottom: '28px' }}>
+        <h3 style={{ fontWeight: '700', marginBottom: '16px' }}>QR Code Theme</h3>
+        <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
+          {THEMES.map(t => (
+            <button 
+              key={t.id}
+              onClick={() => setSelectedTheme(t)}
+              style={{
+                background: t.bg[0],
+                color: t.text,
+                border: selectedTheme.id === t.id ? `2px solid ${t.accent}` : '2px solid transparent',
+                borderRadius: '12px',
+                padding: '10px 16px',
+                cursor: 'pointer',
+                fontWeight: '600',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
+                boxShadow: selectedTheme.id === t.id ? `0 4px 12px ${t.accent}40` : 'none',
+                transition: 'all 0.2s'
+              }}
+            >
+              <div style={{ width: 16, height: 16, borderRadius: '50%', background: t.accent }} />
+              {t.name}
+            </button>
+          ))}
+        </div>
+      </div>
+
       {/* Tables Grid */}
       {tables.length === 0 ? (
         <div style={{ textAlign: 'center', padding: '80px 24px', color: 'var(--text-muted)', background: 'var(--surface)', borderRadius: '20px', border: '1px dashed var(--border)' }}>
@@ -108,7 +156,7 @@ export default function TableManager() {
       ) : (
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: '20px' }}>
           {tables.map(table => (
-            <TableCard key={table.id} table={table} userId={user.uid} baseUrl={baseUrl} onDelete={() => deleteTable(table.id)} />
+            <TableCard key={table.id} table={table} userId={user.uid} baseUrl={baseUrl} restaurantName={restaurantName} theme={selectedTheme} onDelete={() => deleteTable(table.id)} />
           ))}
         </div>
       )}
@@ -116,7 +164,7 @@ export default function TableManager() {
   );
 }
 
-function TableCard({ table, userId, baseUrl, onDelete }) {
+function TableCard({ table, userId, baseUrl, restaurantName, theme, onDelete }) {
   const qrUrl = `${baseUrl}/menu/${userId}/${table.number}`;
   const svgRef = useRef(null);
   const [copied, setCopied] = useState(false);
@@ -131,55 +179,158 @@ function TableCard({ table, userId, baseUrl, onDelete }) {
     const svg = svgRef.current?.querySelector('svg');
     if (!svg) return;
 
-    const padding = 32;
-    const qrSize = 200;
-    const canvasW = qrSize + padding * 2;
-    const canvasH = qrSize + padding * 2 + 48;
-
+    const canvasW = 600;
+    const canvasH = 900;
     const canvas = document.createElement('canvas');
     canvas.width = canvasW * 2;
     canvas.height = canvasH * 2;
     const ctx = canvas.getContext('2d');
     ctx.scale(2, 2);
 
-    // Background (manual roundRect for browser compat)
-    ctx.fillStyle = '#ffffff';
-    const r = 16;
-    ctx.beginPath();
-    ctx.moveTo(r, 0);
-    ctx.lineTo(canvasW - r, 0);
-    ctx.arcTo(canvasW, 0, canvasW, r, r);
-    ctx.lineTo(canvasW, canvasH - r);
-    ctx.arcTo(canvasW, canvasH, canvasW - r, canvasH, r);
-    ctx.lineTo(r, canvasH);
-    ctx.arcTo(0, canvasH, 0, canvasH - r, r);
-    ctx.lineTo(0, r);
-    ctx.arcTo(0, 0, r, 0, r);
-    ctx.closePath();
-    ctx.fill();
+    // 1. Premium Dark Background
+    const bgGradient = ctx.createLinearGradient(0, 0, 0, canvasH);
+    bgGradient.addColorStop(0, theme.bg[0]);
+    bgGradient.addColorStop(0.5, theme.bg[1]);
+    bgGradient.addColorStop(1, theme.bg[2]);
+    ctx.fillStyle = bgGradient;
+    ctx.fillRect(0, 0, canvasW, canvasH);
 
-    // Border
-    ctx.strokeStyle = '#f0f0f0';
+    // 2. Gold Border
+    ctx.globalAlpha = 0.4;
+    ctx.strokeStyle = theme.border; 
+    ctx.lineWidth = 3;
+    ctx.strokeRect(24, 24, canvasW - 48, canvasH - 48);
+    ctx.globalAlpha = 0.15;
     ctx.lineWidth = 1;
-    ctx.stroke();
+    ctx.strokeRect(32, 32, canvasW - 64, canvasH - 64);
+    ctx.globalAlpha = 1.0;
 
-    const svgData = new XMLSerializer().serializeToString(svg);
-    const img = new Image();
-    img.onload = () => {
-      ctx.drawImage(img, padding, padding, qrSize, qrSize);
+    const loadLogo = () => new Promise(resolve => {
+        const logo = new Image();
+        logo.crossOrigin = 'Anonymous';
+        logo.onload = () => resolve(logo);
+        logo.onerror = () => resolve(null);
+        logo.src = '/v4-logo.png';
+    });
 
-      // Table label
-      ctx.fillStyle = '#1a1a2e';
-      ctx.font = 'bold 18px Outfit, sans-serif';
-      ctx.textAlign = 'center';
-      ctx.fillText(`Table ${table.number}`, canvasW / 2, qrSize + padding + 32);
+    const drawRest = async () => {
+        const logo = await loadLogo();
 
-      const link = document.createElement('a');
-      link.download = `Taste-by-v4stay-Table-${table.number}.png`;
-      link.href = canvas.toDataURL('image/png', 1.0);
-      link.click();
+        // Logo
+        if (logo) {
+            const logoH = 50;
+            const logoW = logo.width * (logoH / logo.height);
+            ctx.drawImage(logo, (canvasW - logoW) / 2, 70, logoW, logoH);
+        }
+
+        // Restaurant Name
+        ctx.fillStyle = theme.text;
+        ctx.font = 'bold 46px Outfit, sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText(restaurantName || 'Scan & Order', canvasW / 2, 175);
+
+        // Subtitle
+        ctx.fillStyle = theme.accent;
+        ctx.font = '600 22px Outfit, sans-serif';
+        ctx.letterSpacing = '2px';
+        ctx.fillText('CONTACTLESS DINING', canvasW / 2, 220);
+
+        // QR Background (White rounded rect)
+        const qrSize = 340;
+        const qrX = (canvasW - qrSize) / 2;
+        const qrY = 280;
+        const padding = 24;
+
+        ctx.fillStyle = '#ffffff';
+        ctx.beginPath();
+        const rw = qrSize + padding * 2;
+        const rX = qrX - padding;
+        const rY = qrY - padding;
+        const r = 24;
+        ctx.moveTo(rX + r, rY);
+        ctx.lineTo(rX + rw - r, rY);
+        ctx.arcTo(rX + rw, rY, rX + rw, rY + r, r);
+        ctx.lineTo(rX + rw, rY + rw - r);
+        ctx.arcTo(rX + rw, rY + rw, rX + rw - r, rY + rw, r);
+        ctx.lineTo(rX + r, rY + rw);
+        ctx.arcTo(rX, rY + rw, rX, rY + rw - r, r);
+        ctx.lineTo(rX, rY + r);
+        ctx.arcTo(rX, rY, rX + r, rY, r);
+        ctx.closePath();
+        ctx.shadowColor = 'rgba(0,0,0,0.5)';
+        ctx.shadowBlur = 30;
+        ctx.shadowOffsetY = 15;
+        ctx.fill();
+        
+        ctx.shadowColor = 'transparent';
+        ctx.shadowBlur = 0;
+        ctx.shadowOffsetY = 0;
+
+        // Draw SVG onto canvas
+        const svgData = new XMLSerializer().serializeToString(svg);
+        const img = new Image();
+        img.onload = () => {
+            ctx.drawImage(img, qrX, qrY, qrSize, qrSize);
+
+            // Table Number
+            ctx.fillStyle = theme.text;
+            ctx.font = 'bold 42px Outfit, sans-serif';
+            ctx.fillText(`TABLE ${table.number}`, canvasW / 2, qrY + qrSize + padding + 65);
+
+            // Trust Badges / Sayings with SVG Logos
+            const badgeColor = theme.id === 'light' ? 'rgba(26, 26, 46, 0.9)' : 'rgba(255, 255, 255, 0.9)';
+            
+            const drawIcon = (pathD, x, y) => {
+                ctx.save();
+                ctx.translate(x, y);
+                ctx.scale(20/24, 20/24); // Size to 20px
+                ctx.strokeStyle = badgeColor;
+                ctx.lineWidth = 2.5;
+                ctx.lineCap = 'round';
+                ctx.lineJoin = 'round';
+                if (Array.isArray(pathD)) {
+                    pathD.forEach(d => ctx.stroke(new Path2D(d)));
+                } else {
+                    ctx.stroke(new Path2D(pathD));
+                }
+                ctx.restore();
+            };
+
+            const badgeY = canvasH - 120;
+            ctx.fillStyle = badgeColor;
+            ctx.font = '500 17px Outfit, sans-serif';
+            ctx.textAlign = 'left';
+
+            // Safe Shield
+            drawIcon(['M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z', 'm9 12 2 2 4-4'], 55, badgeY - 16);
+            ctx.fillText('100% Safe', 82, badgeY);
+
+            // India Star
+            const starD = 'M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z';
+            drawIcon(starD, 195, badgeY - 16);
+            ctx.fillText('100% Made in India', 222, badgeY);
+
+            // Smartphone
+            const phoneD = ['M5 2h14a2 2 0 0 1 2 2v16a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2z', 'M12 18h.01'];
+            drawIcon(phoneD, 400, badgeY - 16);
+            ctx.fillText('No App Required', 427, badgeY);
+
+            // Footer branding
+            ctx.textAlign = 'center';
+            ctx.font = '400 14px Outfit, sans-serif';
+            ctx.fillStyle = theme.id === 'light' ? 'rgba(26, 26, 46, 0.4)' : 'rgba(255, 255, 255, 0.4)';
+            ctx.fillText('Powered by Taste by v4stay', canvasW / 2, canvasH - 45);
+
+            // Download
+            const link = document.createElement('a');
+            link.download = `Taste-by-v4stay-Table-${table.number}.png`;
+            link.href = canvas.toDataURL('image/png', 1.0);
+            link.click();
+        };
+        img.src = 'data:image/svg+xml;base64,' + btoa(unescape(encodeURIComponent(svgData)));
     };
-    img.src = 'data:image/svg+xml;base64,' + btoa(unescape(encodeURIComponent(svgData)));
+
+    drawRest();
   };
 
   return (

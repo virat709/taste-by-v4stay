@@ -1,12 +1,35 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowRight, CheckCircle } from 'lucide-react';
+import { Helmet } from 'react-helmet-async';
 
 export default function LandingPage() {
   const navigate = useNavigate();
 
   return (
     <div style={{ minHeight: '100vh', background: 'var(--bg-color)' }}>
+      <Helmet>
+        <title>Taste by v4stay — Smart Digital Menu for Restaurants</title>
+        <meta name="description" content="Let guests scan a QR code and place orders from their phones. Setup your digital menu in minutes." />
+        <link rel="canonical" href="https://yourdomain.com/" />
+        <script type="application/ld+json">
+          {`
+            {
+              "@context": "https://schema.org",
+              "@type": "SoftwareApplication",
+              "name": "Taste by v4stay",
+              "operatingSystem": "Web",
+              "applicationCategory": "BusinessApplication",
+              "offers": {
+                "@type": "Offer",
+                "price": "0",
+                "priceCurrency": "INR"
+              },
+              "description": "Smart Digital Menu SaaS for Restaurants to manage menus and orders via QR code."
+            }
+          `}
+        </script>
+      </Helmet>
       {/* Header */}
       <header style={{ padding: '20px 40px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', position: 'sticky', top: 0, zIndex: 100, background: 'var(--surface)', borderBottom: '1px solid var(--border)' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px', fontWeight: '800', fontSize: '1.6rem', letterSpacing: '-0.5px' }}>
@@ -114,6 +137,7 @@ export default function LandingPage() {
       {/* Footer */}
       <footer style={{ padding: '24px 40px', background: 'var(--surface)', borderTop: '1px solid var(--border)', textAlign: 'center', color: 'var(--text-muted)', fontSize: '0.9rem' }}>
         <div style={{ display: 'flex', justifyContent: 'center', gap: '20px', marginBottom: '12px', flexWrap: 'wrap' }}>
+          <span style={{ cursor: 'pointer', color: 'var(--primary)', fontWeight: '600' }} onClick={() => navigate('/about')}>About</span>
           <span style={{ cursor: 'pointer', color: 'var(--primary)', fontWeight: '600' }} onClick={() => navigate('/terms')}>Terms</span>
           <span style={{ cursor: 'pointer', color: 'var(--primary)', fontWeight: '600' }} onClick={() => navigate('/privacy')}>Privacy</span>
           <span style={{ cursor: 'pointer', color: 'var(--primary)', fontWeight: '600' }} onClick={() => navigate('/contact')}>Contact</span>
