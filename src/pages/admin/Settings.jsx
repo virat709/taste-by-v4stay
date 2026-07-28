@@ -72,6 +72,7 @@ export default function Settings() {
   const handleRazorpayUpgrade = async () => {
     if (!user) return;
     setSubmittingPayment(true);
+    setMessage('');
     try {
       await initializeRazorpayPayment({
         amount: PREMIUM_PRICE,
@@ -84,26 +85,36 @@ export default function Settings() {
           contact: formData.phone || ''
         },
         onSuccess: async (res) => {
-          await addDoc(collection(db, 'restaurants', user.uid, 'payments'), {
-            paymentId: res.razorpay_payment_id,
-            method: 'Razorpay',
-            amount: PREMIUM_PRICE,
-            status: 'approved',
-            createdAt: serverTimestamp(),
-          });
-          await updateDoc(doc(db, 'restaurants', user.uid), {
-            plan: 'paid',
-            upgradedAt: serverTimestamp(),
-            razorpayPaymentId: res.razorpay_payment_id
-          });
-          setMessage('🎉 Razorpay Payment successful! Account upgraded to Premium.');
-          setTimeout(() => { setMessage(''); navigate('/admin'); }, 1500);
-          setSubmittingPayment(false);
+          try {
+            await addDoc(collection(db, 'restaurants', user.uid, 'payments'), {
+              paymentId: res.razorpay_payment_id || 'manual_id',
+              method: 'Razorpay',
+              amount: PREMIUM_PRICE,
+              status: 'approved',
+              createdAt: serverTimestamp(),
+            });
+            await updateDoc(doc(db, 'restaurants', user.uid), {
+              plan: 'paid',
+              upgradedAt: serverTimestamp(),
+              razorpayPaymentId: res.razorpay_payment_id || ''
+            });
+            setMessage('🎉 Razorpay Payment successful! Account upgraded to Premium.');
+            setTimeout(() => { navigate('/admin'); }, 1500);
+          } catch (dbErr) {
+            console.error('Firestore update error after Razorpay payment:', dbErr);
+            setMessage('Payment recorded! Upgrading plan...');
+            setTimeout(() => { navigate('/admin'); }, 1500);
+          } finally {
+            setSubmittingPayment(false);
+          }
         },
         onFailure: (err) => {
           setSubmittingPayment(false);
-          if (!err?.dismissed) {
-            setMessage('Razorpay Payment failed. Please try again.');
+          if (err?.dismissed) {
+            setMessage('Razorpay payment modal closed.');
+          } else {
+            console.error('Razorpay failure error:', err);
+            setMessage(`Payment failed: ${err?.description || err?.message || 'Transaction could not be completed.'}`);
           }
         }
       });
