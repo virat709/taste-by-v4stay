@@ -1,8 +1,29 @@
 {
-  "name": "restaurant-rq-menu-saas",
+  "name": "dinepulse-by-v4stay",
   "private": true,
-  "version": "0.0.0",
+  "version": "1.0.0",
+  "description": "DinePulse — Next-Generation QR-Code Digital Menu, Contactless Ordering & Restaurant Automation System by v4stay.",
   "type": "module",
+  "homepage": "https://taste.v4stay.com",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/virat709/taste-by-v4stay.git"
+  },
+  "keywords": [
+    "restaurant-software",
+    "food-software",
+    "restaurant-automation",
+    "qr-code-menu",
+    "contactless-dining",
+    "kitchen-display-system",
+    "react",
+    "vite",
+    "firebase",
+    "razorpay",
+    "v4stay"
+  ],
+  "author": "v4stay",
+  "license": "MIT",
   "scripts": {
     "dev": "vite",
     "build": "vite build",
