@@ -19,6 +19,9 @@ import KitchenDisplay from './pages/kitchen/KitchenDisplay';
 import LegalPage from './pages/LegalPage';
 import Contact from './pages/Contact';
 import About from './pages/About';
+import RestaurantSoftwarePage from './pages/RestaurantSoftwarePage';
+import FoodSoftwarePage from './pages/FoodSoftwarePage';
+import RestaurantAutomationPage from './pages/RestaurantAutomationPage';
 
 function ProtectedRoute({ children }) {
   const { user, loading } = useAuth();
@@ -42,8 +45,13 @@ function AppRoutes() {
       <Route path="/staff/dashboard" element={<StaffDashboard />} />
       <Route path="/kitchen/:restaurantId" element={<KitchenDisplay />} />
       <Route path="/menu/:restaurantId/:tableNumber" element={<MenuView />} />
+      <Route path="/restaurant-software" element={<RestaurantSoftwarePage />} />
+      <Route path="/food-software" element={<FoodSoftwarePage />} />
+      <Route path="/restaurant-automation" element={<RestaurantAutomationPage />} />
       <Route path="/terms" element={<LegalPage page="terms" />} />
       <Route path="/privacy" element={<LegalPage page="privacy" />} />
+      <Route path="/cookies" element={<LegalPage page="cookies" />} />
+      <Route path="/refund" element={<LegalPage page="refund" />} />
       <Route path="/contact" element={<Contact />} />
       <Route path="/about" element={<About />} />
       <Route path="*" element={<Navigate to="/" replace />} />

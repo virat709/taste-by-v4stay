@@ -40,20 +40,22 @@ export default function MenuManager() {
   }, [user]);
 
   const currency = restaurant?.currency || '₹';
+  const categoryIdsKey = categories.map(c => c.id).join(',');
 
-  // Subscribe to items for each category
+  // Subscribe to items for each category cleanly without infinite re-render loops
   useEffect(() => {
-    if (!user || categories.length === 0) return;
-    const unsubs = categories.map(cat => {
-      const q = query(collection(db, 'restaurants', user.uid, 'categories', cat.id, 'items'), orderBy('createdAt'));
+    if (!user || !categoryIdsKey) return;
+    const catIds = categoryIdsKey.split(',').filter(Boolean);
+    const unsubs = catIds.map(catId => {
+      const q = query(collection(db, 'restaurants', user.uid, 'categories', catId, 'items'), orderBy('createdAt'));
       return onSnapshot(q, snap => {
         setCategories(prev => prev.map(c =>
-          c.id === cat.id ? { ...c, items: snap.docs.map(d => ({ id: d.id, ...d.data() })) } : c
+          c.id === catId ? { ...c, items: snap.docs.map(d => ({ id: d.id, ...d.data() })) } : c
         ));
       });
     });
     return () => unsubs.forEach(u => u());
-  }, [user, categories]);
+  }, [user, categoryIdsKey]);
 
   if (!user) return null;
 
@@ -68,7 +70,6 @@ export default function MenuManager() {
 
   const deleteCategory = async (catId) => {
     if (!user || !window.confirm('Delete this category and all its items?')) return;
-    // Delete all items in the sub-collection first (Firestore won't cascade)
     const itemsSnap = await getDocs(collection(db, 'restaurants', user.uid, 'categories', catId, 'items'));
     const deletePromises = itemsSnap.docs.map(d => deleteDoc(d.ref));
     await Promise.all(deletePromises);
@@ -95,212 +96,181 @@ export default function MenuManager() {
 
       {categories.map(cat => (
         <div key={cat.id} style={{ background: 'var(--surface)', borderRadius: '20px', border: '1px solid var(--border)', marginBottom: '20px', overflow: 'hidden' }}>
-          <div style={{ padding: '16px 24px', borderBottom: cat.items.length > 0 ? '1px solid var(--border)' : 'none', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'rgba(255,71,87,0.03)' }}>
+          <div style={{ padding: '16px 24px', borderBottom: cat.items.length > 0 ? '1px solid var(--border)' : 'none', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'rgba(245,158,11,0.03)' }}>
             <h2 style={{ fontSize: '1.15rem', fontWeight: '700' }}>
-              {cat.name}
-              <span style={{ marginLeft: '10px', fontSize: '0.82rem', color: 'var(--text-muted)', fontWeight: '400' }}>{cat.items.length} items</span>
+              {cat.name} <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)', fontWeight: '400' }}>({cat.items.length} items)</span>
             </h2>
-            <div style={{ display: 'flex', gap: '10px' }}>
-              <button className="btn-primary" style={{ padding: '8px 16px', fontSize: '0.85rem' }} onClick={() => setShowItemModal(cat.id)}>
+            <div style={{ display: 'flex', gap: '8px' }}>
+              <button onClick={() => { setShowItemModal(cat.id); setEditItem(null); }} className="btn-secondary" style={{ padding: '6px 14px', fontSize: '0.85rem' }}>
                 <Plus size={15} /> Add Item
               </button>
-              <button onClick={() => deleteCategory(cat.id)} style={{ background: 'rgba(255,71,87,0.1)', border: 'none', borderRadius: '10px', padding: '8px 12px', cursor: 'pointer', color: 'var(--primary)', display: 'flex' }}>
+              <button onClick={() => deleteCategory(cat.id)} style={{ background: 'none', border: 'none', color: '#ff4757', cursor: 'pointer', padding: '6px' }}>
                 <Trash2 size={16} />
               </button>
             </div>
           </div>
 
-          {cat.items.length === 0 ? (
-            <div style={{ padding: '20px 24px', color: 'var(--text-muted)', fontSize: '0.9rem' }}>
-              No items yet — click "+ Add Item" to get started.
-            </div>
-          ) : (
-            cat.items.map(item => (
-              <ItemRow key={item.id} item={item} catId={cat.id} userId={user.uid} currency={currency}
-                onEdit={() => setEditItem({ ...item, catId: cat.id })} />
-            ))
-          )}
+          <div style={{ padding: cat.items.length > 0 ? '12px 24px' : '0' }}>
+            {cat.items.map((item, i) => (
+              <ItemRow key={item.id} item={item} currency={currency} catId={cat.id} userId={user.uid} isLast={i === cat.items.length - 1} onEdit={() => { setEditItem(item); setShowItemModal(cat.id); }} />
+            ))}
+          </div>
         </div>
       ))}
 
       {/* Add Category Modal */}
       {showCatModal && (
-        <Modal title="New Category" onClose={() => setShowCatModal(false)}>
-          <input className="input-field" placeholder='Category name (e.g. "Starters")' value={newCatName}
-            onChange={e => setNewCatName(e.target.value)} onKeyDown={e => e.key === 'Enter' && addCategory()} autoFocus />
-          <div style={{ display: 'flex', gap: '12px', marginTop: '16px' }}>
-            <button className="btn-secondary" style={{ flex: 1 }} onClick={() => setShowCatModal(false)}>Cancel</button>
-            <button className="btn-primary" style={{ flex: 1 }} onClick={addCategory}>Add</button>
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 200, backdropFilter: 'blur(4px)' }}>
+          <div className="glass-panel" style={{ width: '100%', maxWidth: '400px', padding: '28px', borderRadius: '24px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+              <h2 style={{ fontSize: '1.2rem', fontWeight: '800' }}>Add Category</h2>
+              <button onClick={() => setShowCatModal(false)} style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer' }}><X size={18} /></button>
+            </div>
+            <input className="input-field" placeholder="Category Name (e.g. Starters)" value={newCatName} onChange={e => setNewCatName(e.target.value)} onKeyDown={e => e.key === 'Enter' && addCategory()} autoFocus style={{ marginBottom: '20px' }} />
+            <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end' }}>
+              <button className="btn-secondary" onClick={() => setShowCatModal(false)}>Cancel</button>
+              <button className="btn-primary" onClick={addCategory}>Create Category</button>
+            </div>
           </div>
-        </Modal>
+        </div>
       )}
 
+      {/* Add / Edit Item Modal */}
       {showItemModal && (
-        <ItemFormModal catId={showItemModal} userId={user.uid} onClose={() => setShowItemModal(null)} />
-      )}
-      {editItem && (
-        <ItemFormModal catId={editItem.catId} userId={user.uid} item={editItem} onClose={() => setEditItem(null)} />
+        <ItemModal catId={showItemModal} item={editItem} userId={user.uid} onClose={() => { setShowItemModal(null); setEditItem(null); }} />
       )}
     </AdminLayout>
   );
 }
 
-function ItemRow({ item, catId, userId, currency, onEdit }) {
-  const handleDelete = async () => {
-    if (window.confirm(`Delete "${item.name}"?`))
-      await deleteDoc(doc(db, 'restaurants', userId, 'categories', catId, 'items', item.id));
+function ItemRow({ item, currency, catId, userId, isLast, onEdit }) {
+  const toggleAvailable = async () => {
+    await updateDoc(doc(db, 'restaurants', userId, 'categories', catId, 'items', item.id), {
+      available: item.available === false ? true : false
+    });
   };
+
+  const deleteItem = async () => {
+    if (window.confirm(`Delete "${item.name}"?`)) {
+      await deleteDoc(doc(db, 'restaurants', userId, 'categories', catId, 'items', item.id));
+    }
+  };
+
   return (
-    <div style={{ display: 'flex', alignItems: 'center', gap: '16px', padding: '14px 24px', borderBottom: '1px solid var(--border)' }}>
-      {item.image
-        ? <img src={item.image} alt={item.name} style={{ width: '54px', height: '54px', borderRadius: '12px', objectFit: 'cover', flexShrink: 0 }} />
-        : <div style={{ width: '54px', height: '54px', borderRadius: '12px', background: 'var(--bg-color)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.5rem', flexShrink: 0 }}>🍽️</div>
-      }
-      <div style={{ flex: 1 }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '3px' }}>
-          {item.isVeg ? <Leaf size={13} color="#2ed573" /> : <Drumstick size={13} color="#ff4757" />}
-          <span style={{ fontWeight: '700' }}>{item.name}</span>
-          {item.available === false && <span style={{ fontSize: '0.72rem', background: 'rgba(164,176,190,0.2)', color: 'var(--text-muted)', borderRadius: '50px', padding: '2px 8px' }}>Unavailable</span>}
+    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 0', borderBottom: isLast ? 'none' : '1px solid var(--border)' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '14px', flex: 1, minWidth: 0 }}>
+        {item.image ? (
+          <img src={item.image} alt={item.name} style={{ width: '48px', height: '48px', borderRadius: '10px', objectFit: 'cover', flexShrink: 0 }} />
+        ) : (
+          <div style={{ width: '48px', height: '48px', borderRadius: '10px', background: 'var(--bg-color)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.4rem', flexShrink: 0 }}>🍽️</div>
+        )}
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '2px' }}>
+            <span style={{ fontWeight: '700', fontSize: '0.98rem', opacity: item.available === false ? 0.5 : 1 }}>{item.name}</span>
+            {item.isVeg ? (
+              <span style={{ display: 'inline-flex', alignItems: 'center', gap: '3px', fontSize: '0.72rem', color: '#10b981', background: 'rgba(16,185,129,0.1)', padding: '2px 6px', borderRadius: '4px', fontWeight: '700' }}><Leaf size={11} /> Veg</span>
+            ) : (
+              <span style={{ display: 'inline-flex', alignItems: 'center', gap: '3px', fontSize: '0.72rem', color: '#ef4444', background: 'rgba(239,68,68,0.1)', padding: '2px 6px', borderRadius: '4px', fontWeight: '700' }}><Drumstick size={11} /> Non-Veg</span>
+            )}
+          </div>
+          {item.description && <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{item.description}</p>}
         </div>
-        {item.description && <p style={{ fontSize: '0.82rem', color: 'var(--text-muted)', marginBottom: '2px' }}>{item.description}</p>}
-        <span style={{ fontWeight: '700', color: 'var(--primary)', fontSize: '0.95rem' }}>{currency}{parseFloat(item.price || 0).toFixed(2)}</span>
       </div>
-      <div style={{ display: 'flex', gap: '8px' }}>
-        <button onClick={onEdit} style={{ background: 'rgba(30,144,255,0.1)', border: 'none', borderRadius: '10px', padding: '8px', cursor: 'pointer', color: '#1e90ff', display: 'flex' }}><Pencil size={15} /></button>
-        <button onClick={handleDelete} style={{ background: 'rgba(255,71,87,0.1)', border: 'none', borderRadius: '10px', padding: '8px', cursor: 'pointer', color: 'var(--primary)', display: 'flex' }}><Trash2 size={15} /></button>
+
+      <div style={{ display: 'flex', alignItems: 'center', gap: '16px', flexShrink: 0 }}>
+        <span style={{ fontWeight: '800', fontSize: '1rem', color: '#f59e0b' }}>{currency}{parseFloat(item.price || 0).toFixed(2)}</span>
+        <button onClick={toggleAvailable} style={{ background: item.available === false ? 'rgba(239,68,68,0.1)' : 'rgba(16,185,129,0.1)', color: item.available === false ? '#ef4444' : '#10b981', border: 'none', padding: '4px 10px', borderRadius: '50px', fontSize: '0.75rem', fontWeight: '800', cursor: 'pointer' }}>
+          {item.available === false ? 'Out of Stock' : 'In Stock'}
+        </button>
+        <button onClick={onEdit} style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', padding: '4px' }}><Pencil size={15} /></button>
+        <button onClick={deleteItem} style={{ background: 'none', border: 'none', color: '#ff4757', cursor: 'pointer', padding: '4px' }}><Trash2 size={15} /></button>
       </div>
     </div>
   );
 }
 
-function ItemFormModal({ catId, userId, item, onClose }) {
+function ItemModal({ catId, item, userId, onClose }) {
   const [name, setName] = useState(item?.name || '');
   const [description, setDescription] = useState(item?.description || '');
   const [price, setPrice] = useState(item?.price || '');
   const [image, setImage] = useState(item?.image || '');
   const [isVeg, setIsVeg] = useState(item?.isVeg ?? true);
-  const [available, setAvailable] = useState(item?.available ?? true);
-  const [optionGroups, setOptionGroups] = useState(item?.optionGroups || []);
-  const [loading, setLoading] = useState(false);
+  const [saving, setSaving] = useState(false);
 
-  const addOptionGroup = () => {
-    setOptionGroups(prev => [...prev, { name: '', type: 'single', required: false, options: [{ name: '', price: 0 }] }]);
-  };
+  const handleSave = async (e) => {
+    e.preventDefault();
+    if (!name.trim() || !price) return;
+    setSaving(true);
 
-  const updateOptionGroup = (idx, field, value) => {
-    setOptionGroups(prev => prev.map((g, i) => i === idx ? { ...g, [field]: value } : g));
-  };
-
-  const removeOptionGroup = (idx) => {
-    setOptionGroups(prev => prev.filter((_, i) => i !== idx));
-  };
-
-  const addOption = (gIdx) => {
-    setOptionGroups(prev => prev.map((g, i) => i === gIdx ? { ...g, options: [...g.options, { name: '', price: 0 }] } : g));
-  };
-
-  const updateOption = (gIdx, oIdx, field, value) => {
-    setOptionGroups(prev => prev.map((g, i) => i === gIdx ? { ...g, options: g.options.map((o, j) => j === oIdx ? { ...o, [field]: value } : o) } : g));
-  };
-
-  const removeOption = (gIdx, oIdx) => {
-    setOptionGroups(prev => prev.map((g, i) => i === gIdx ? { ...g, options: g.options.filter((_, j) => j !== oIdx) } : g));
-  };
-
-  const handleSave = async () => {
-    if (!name.trim() || price === '' || price === null || price === undefined) return;
-    setLoading(true);
-    const data = {
-      name: name.trim(), description, price: parseFloat(price), image, isVeg, available,
-      optionGroups: optionGroups.filter(g => g.name.trim()).map(g => ({
-        ...g, name: g.name.trim(),
-        options: g.options.filter(o => o.name.trim())
-      }))
+    const payload = {
+      name: name.trim(),
+      description: description.trim(),
+      price: parseFloat(price) || 0,
+      image: image.trim(),
+      isVeg,
+      updatedAt: serverTimestamp()
     };
-    try {
-      if (item?.id) {
-        await updateDoc(doc(db, 'restaurants', userId, 'categories', catId, 'items', item.id), data);
-      } else {
-        await addDoc(collection(db, 'restaurants', userId, 'categories', catId, 'items'), { ...data, createdAt: serverTimestamp() });
-      }
-      onClose();
-    } finally {
-      setLoading(false);
+
+    if (item) {
+      await updateDoc(doc(db, 'restaurants', userId, 'categories', catId, 'items', item.id), payload);
+    } else {
+      await addDoc(collection(db, 'restaurants', userId, 'categories', catId, 'items'), {
+        ...payload,
+        available: true,
+        createdAt: serverTimestamp()
+      });
     }
+
+    setSaving(false);
+    onClose();
   };
 
   return (
-    <Modal title={item?.id ? 'Edit Item' : 'Add New Item'} onClose={onClose}>
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-        <input className="input-field" placeholder="Item name *" value={name} onChange={e => setName(e.target.value)} />
-        <textarea className="input-field" placeholder="Description (optional)" value={description} onChange={e => setDescription(e.target.value)} rows={2} style={{ resize: 'vertical', fontFamily: 'inherit' }} />
-        <input className="input-field" placeholder="Price (e.g. 299) *" type="number" min="0" value={price} onChange={e => setPrice(e.target.value)} />
-        <input className="input-field" placeholder="Image URL (optional)" value={image} onChange={e => setImage(e.target.value)} />
-
-        <div style={{ display: 'flex', gap: '10px' }}>
-          {[{ v: true, label: '🌿 Veg', color: '#2ed573' }, { v: false, label: '🍗 Non-Veg', color: '#ff4757' }].map(opt => (
-            <button key={String(opt.v)} onClick={() => setIsVeg(opt.v)} style={{ flex: 1, padding: '10px', borderRadius: '12px', border: `2px solid ${isVeg === opt.v ? opt.color : 'var(--border)'}`, background: isVeg === opt.v ? `${opt.color}18` : 'transparent', cursor: 'pointer', fontWeight: '700', color: isVeg === opt.v ? opt.color : 'var(--text-muted)', fontFamily: 'inherit', fontSize: '0.9rem' }}>
-              {opt.label}
-            </button>
-          ))}
-        </div>
-
-        <label style={{ display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer', fontWeight: '500', fontSize: '0.9rem' }}>
-          <input type="checkbox" checked={available} onChange={e => setAvailable(e.target.checked)} />
-          Available to order
-        </label>
-
-        {/* Option Groups / Modifiers */}
-        <div style={{ borderTop: '1px solid var(--border)', paddingTop: '16px', marginTop: '4px' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-            <span style={{ fontWeight: '700', fontSize: '0.95rem' }}>Modifiers / Options</span>
-            <button onClick={addOptionGroup} style={{ background: 'none', border: '1px dashed var(--primary)', color: 'var(--primary)', borderRadius: '8px', padding: '4px 12px', cursor: 'pointer', fontSize: '0.8rem', fontWeight: '600', fontFamily: 'inherit' }}>+ Add Group</button>
-          </div>
-          {optionGroups.map((g, gIdx) => (
-            <div key={gIdx} style={{ background: 'var(--bg-color)', borderRadius: '12px', padding: '12px', marginBottom: '8px', border: '1px solid var(--border)' }}>
-              <div style={{ display: 'flex', gap: '8px', alignItems: 'center', marginBottom: '8px' }}>
-                <input className="input-field" style={{ flex: 1, padding: '8px 12px', fontSize: '0.85rem' }} placeholder="Group name (e.g. Size)" value={g.name} onChange={e => updateOptionGroup(gIdx, 'name', e.target.value)} />
-                <select value={g.type} onChange={e => updateOptionGroup(gIdx, 'type', e.target.value)} style={{ padding: '8px', borderRadius: '8px', border: '1px solid var(--border)', background: 'var(--surface)', fontFamily: 'inherit', fontSize: '0.8rem' }}>
-                  <option value="single">Single</option>
-                  <option value="multiple">Multiple</option>
-                </select>
-                <label style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '0.8rem', fontWeight: '600', whiteSpace: 'nowrap', cursor: 'pointer' }}>
-                  <input type="checkbox" checked={g.required} onChange={e => updateOptionGroup(gIdx, 'required', e.target.checked)} />
-                  Required
-                </label>
-                <button onClick={() => removeOptionGroup(gIdx)} style={{ background: 'none', border: 'none', color: 'var(--primary)', cursor: 'pointer', padding: '4px' }}><Trash2 size={14} /></button>
-              </div>
-              {g.options.map((opt, oIdx) => (
-                <div key={oIdx} style={{ display: 'flex', gap: '6px', alignItems: 'center', marginBottom: '6px' }}>
-                  <input className="input-field" style={{ flex: 1, padding: '6px 10px', fontSize: '0.82rem' }} placeholder="Option name" value={opt.name} onChange={e => updateOption(gIdx, oIdx, 'name', e.target.value)} />
-                  <input className="input-field" style={{ width: '80px', padding: '6px 10px', fontSize: '0.82rem' }} placeholder="Price" type="number" min="0" value={opt.price} onChange={e => updateOption(gIdx, oIdx, 'price', Number(e.target.value))} />
-                  <button onClick={() => removeOption(gIdx, oIdx)} style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', padding: '4px' }}><X size={14} /></button>
-                </div>
-              ))}
-              <button onClick={() => addOption(gIdx)} style={{ background: 'none', border: 'none', color: 'var(--accent)', cursor: 'pointer', fontSize: '0.8rem', fontWeight: '600', fontFamily: 'inherit', padding: '4px 0' }}>+ Add option</button>
-            </div>
-          ))}
-        </div>
-      </div>
-      <div style={{ display: 'flex', gap: '12px', marginTop: '20px' }}>
-        <button className="btn-secondary" style={{ flex: 1 }} onClick={onClose}>Cancel</button>
-        <button className="btn-primary" style={{ flex: 1 }} onClick={handleSave} disabled={loading}>
-          {loading ? 'Saving...' : item?.id ? 'Save Changes' : 'Add Item'}
-        </button>
-      </div>
-    </Modal>
-  );
-}
-
-export function Modal({ title, onClose, children }) {
-  return (
-    <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: '20px' }}>
-      <div className="glass animate-fade-in" style={{ width: '100%', maxWidth: '480px', padding: '28px', borderRadius: '24px', background: 'var(--surface)' }}>
+    <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.65)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 200, backdropFilter: 'blur(4px)', padding: '20px' }}>
+      <div className="glass-panel" style={{ width: '100%', maxWidth: '480px', padding: '28px', borderRadius: '24px' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-          <h2 style={{ fontSize: '1.15rem', fontWeight: '700' }}>{title}</h2>
-          <button onClick={onClose} style={{ background: 'var(--bg-color)', border: 'none', borderRadius: '50%', width: '32px', height: '32px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}><X size={16} /></button>
+          <h2 style={{ fontSize: '1.2rem', fontWeight: '800' }}>{item ? 'Edit Dish' : 'Add New Dish'}</h2>
+          <button onClick={onClose} style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer' }}><X size={18} /></button>
         </div>
-        {children}
+
+        <form onSubmit={handleSave} style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+          <div>
+            <label style={{ display: 'block', fontSize: '0.82rem', fontWeight: '700', color: 'var(--text-muted)', marginBottom: '6px' }}>Dish Name *</label>
+            <input className="input-field" placeholder="e.g. Royal Awadhi Biryani" value={name} onChange={e => setName(e.target.value)} required />
+          </div>
+
+          <div>
+            <label style={{ display: 'block', fontSize: '0.82rem', fontWeight: '700', color: 'var(--text-muted)', marginBottom: '6px' }}>Description</label>
+            <textarea className="input-field" placeholder="Ingredients, taste, cooking style..." value={description} onChange={e => setDescription(e.target.value)} rows={2} style={{ resize: 'none' }} />
+          </div>
+
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px' }}>
+            <div>
+              <label style={{ display: 'block', fontSize: '0.82rem', fontWeight: '700', color: 'var(--text-muted)', marginBottom: '6px' }}>Price (₹) *</label>
+              <input className="input-field" type="number" step="0.01" min="0" placeholder="e.g. 580" value={price} onChange={e => setPrice(e.target.value)} required />
+            </div>
+
+            <div>
+              <label style={{ display: 'block', fontSize: '0.82rem', fontWeight: '700', color: 'var(--text-muted)', marginBottom: '6px' }}>Dietary Type</label>
+              <select className="input-field" value={isVeg ? 'veg' : 'non-veg'} onChange={e => setIsVeg(e.target.value === 'veg')}>
+                <option value="veg">🟢 Veg</option>
+                <option value="non-veg">🔴 Non-Veg</option>
+              </select>
+            </div>
+          </div>
+
+          <div>
+            <label style={{ display: 'block', fontSize: '0.82rem', fontWeight: '700', color: 'var(--text-muted)', marginBottom: '6px' }}>Image URL</label>
+            <input className="input-field" placeholder="https://example.com/photo.jpg" value={image} onChange={e => setImage(e.target.value)} />
+          </div>
+
+          <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end', marginTop: '10px' }}>
+            <button type="button" className="btn-secondary" onClick={onClose}>Cancel</button>
+            <button type="submit" disabled={saving} className="btn-primary">
+              {saving ? 'Saving...' : item ? 'Update Item' : 'Add Item'}
+            </button>
+          </div>
+        </form>
       </div>
     </div>
   );

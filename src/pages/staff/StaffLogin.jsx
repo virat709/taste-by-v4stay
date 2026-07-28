@@ -51,8 +51,8 @@ export default function StaffLogin() {
       <div style={{ background: 'var(--surface)', padding: '40px', borderRadius: '24px', width: '100%', maxWidth: '400px', border: '1px solid var(--border)', boxShadow: '0 8px 32px rgba(0,0,0,0.2)' }}>
         <div style={{ textAlign: 'center', marginBottom: '32px' }}>
           <h1 style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px', fontWeight: '800', fontSize: '2rem', letterSpacing: '-0.5px', marginBottom: '8px' }}>
-            <img src="/v4-logo.png" alt="v4stay" style={{ height: '36px' }} />
-            Taste <span className="text-gradient">Staff</span>
+            <img src="/logo.png" alt="DinePulse" style={{ height: '36px', width: 'auto', borderRadius: '8px' }} />
+            DinePulse <span className="text-gradient">Staff</span>
           </h1>
           <p style={{ color: 'var(--text-muted)' }}>Enter your restaurant credentials to view live orders.</p>
         </div>

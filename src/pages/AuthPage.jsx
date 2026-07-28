@@ -87,8 +87,8 @@ export default function AuthPage() {
         {/* Logo */}
         <div style={{ textAlign: 'center', marginBottom: '32px' }}>
           <div style={{ display: 'inline-flex', alignItems: 'center', gap: '12px', fontSize: '2rem', fontWeight: '800', color: 'white' }}>
-            <img src="/v4-logo.png" alt="v4stay" style={{ height: '40px' }} />
-            <span>Taste</span>
+            <img src="/logo.png" alt="DinePulse" style={{ height: '40px', width: 'auto', borderRadius: '10px' }} />
+            <span>DinePulse</span>
           </div>
           <p style={{ color: 'rgba(255,255,255,0.5)', marginTop: '8px', fontSize: '0.95rem' }}>
             {mode === 'login' ? 'Welcome back! Sign in to your dashboard.' : 'Create your restaurant account.'}

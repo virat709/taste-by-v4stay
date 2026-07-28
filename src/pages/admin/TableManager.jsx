@@ -10,10 +10,9 @@ import { QRCodeSVG } from 'qrcode.react';
 import { Plus, Trash2, Download, QrCode, Copy, Check } from 'lucide-react';
 
 const THEMES = [
-  { id: 'luxury', name: 'Dark Luxury', bg: ['#0f0c29', '#302b63', '#24243e'], border: '#ffd700', text: '#ffffff', accent: '#ffb142' },
-  { id: 'royal', name: 'Royal Crimson', bg: ['#4a0000', '#2a0000', '#1a0000'], border: '#ffb142', text: '#ffffff', accent: '#ffcc00' },
-  { id: 'forest', name: 'Forest Green', bg: ['#003314', '#00220d', '#001106'], border: '#b8e994', text: '#ffffff', accent: '#b8e994' },
-  { id: 'light', name: 'Pristine White', bg: ['#ffffff', '#f8f9fa', '#e9ecef'], border: '#cccccc', text: '#1a1a2e', accent: '#1e90ff' }
+  { id: 'poster', name: '👑 Royal Smarter Dining (Poster)', bg: ['#090c15', '#0f1422', '#080a11'], border: '#f59e0b', text: '#ffffff', accent: '#fcd34d' },
+  { id: 'luxury', name: '✨ Dark Obsidian Luxury', bg: ['#060709', '#0e1017', '#060709'], border: '#d97706', text: '#ffffff', accent: '#fbbf24' },
+  { id: 'pristine', name: '⚪ Pristine White', bg: ['#ffffff', '#f8fafc', '#f1f5f9'], border: '#d97706', text: '#0f172a', accent: '#0f766e' }
 ];
 
 export default function TableManager() {
@@ -86,8 +85,8 @@ export default function TableManager() {
   return (
     <AdminLayout>
       <div style={{ marginBottom: '28px' }}>
-        <h1 style={{ fontSize: '1.9rem', fontWeight: '800', marginBottom: '4px' }}>Tables & QR Codes</h1>
-        <p style={{ color: 'var(--text-muted)' }}>Add tables and download QR codes for your guests to scan.</p>
+        <h1 style={{ fontSize: '1.9rem', fontWeight: '800', marginBottom: '4px' }}>Tables & QR Standees</h1>
+        <p style={{ color: 'var(--text-muted)' }}>Generate high-definition printable QR standee posters for your dining tables.</p>
       </div>
 
       {/* Add Table Panel */}
@@ -101,7 +100,7 @@ export default function TableManager() {
               onKeyDown={e => e.key === 'Enter' && addTable()} />
           </div>
           <button className="btn-primary" onClick={addTable} disabled={loading} style={{ alignSelf: 'flex-end' }}>
-            <Plus size={18} /> Add Table
+            <Plus size={16} /> Add Table
           </button>
         </div>
 
@@ -118,7 +117,7 @@ export default function TableManager() {
 
       {/* Theme Selector */}
       <div style={{ background: 'var(--surface)', borderRadius: '20px', border: '1px solid var(--border)', padding: '24px', marginBottom: '28px' }}>
-        <h3 style={{ fontWeight: '700', marginBottom: '16px' }}>QR Code Theme</h3>
+        <h3 style={{ fontWeight: '700', marginBottom: '16px' }}>QR Standee Design Theme</h3>
         <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
           {THEMES.map(t => (
             <button 
@@ -139,7 +138,7 @@ export default function TableManager() {
                 transition: 'all 0.2s'
               }}
             >
-              <div style={{ width: 16, height: 16, borderRadius: '50%', background: t.accent }} />
+              <div style={{ width: 14, height: 14, borderRadius: '50%', background: t.accent }} />
               {t.name}
             </button>
           ))}
@@ -149,12 +148,12 @@ export default function TableManager() {
       {/* Tables Grid */}
       {tables.length === 0 ? (
         <div style={{ textAlign: 'center', padding: '80px 24px', color: 'var(--text-muted)', background: 'var(--surface)', borderRadius: '20px', border: '1px dashed var(--border)' }}>
-          <QrCode size={64} style={{ marginBottom: '16px', opacity: 0.2 }} />
+          <QrCode size={48} style={{ marginBottom: '16px', opacity: 0.2 }} />
           <h3 style={{ marginBottom: '8px', color: 'var(--text-main)', fontWeight: '600' }}>No tables yet</h3>
-          <p>Add a table number above to generate its unique QR code.</p>
+          <p>Add a table number above to generate its unique QR code poster.</p>
         </div>
       ) : (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: '20px' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '24px' }}>
           {tables.map(table => (
             <TableCard key={table.id} table={table} userId={user.uid} baseUrl={baseUrl} restaurantName={restaurantName} theme={selectedTheme} onDelete={() => deleteTable(table.id)} />
           ))}
@@ -179,155 +178,244 @@ function TableCard({ table, userId, baseUrl, restaurantName, theme, onDelete }) 
     const svg = svgRef.current?.querySelector('svg');
     if (!svg) return;
 
-    const canvasW = 600;
-    const canvasH = 900;
+    // High-Resolution 8K Canvas Output (800x1250 @ 2x scale)
+    const canvasW = 800;
+    const canvasH = 1250;
     const canvas = document.createElement('canvas');
     canvas.width = canvasW * 2;
     canvas.height = canvasH * 2;
     const ctx = canvas.getContext('2d');
     ctx.scale(2, 2);
 
-    // 1. Premium Dark Background
+    // 1. Deep Royal Navy Background
     const bgGradient = ctx.createLinearGradient(0, 0, 0, canvasH);
-    bgGradient.addColorStop(0, theme.bg[0]);
-    bgGradient.addColorStop(0.5, theme.bg[1]);
-    bgGradient.addColorStop(1, theme.bg[2]);
+    bgGradient.addColorStop(0, '#090c15');
+    bgGradient.addColorStop(0.5, '#0f1422');
+    bgGradient.addColorStop(1, '#080a11');
     ctx.fillStyle = bgGradient;
     ctx.fillRect(0, 0, canvasW, canvasH);
 
-    // 2. Gold Border
-    ctx.globalAlpha = 0.4;
-    ctx.strokeStyle = theme.border; 
+    // 2. Double Golden Framing Lines
+    ctx.strokeStyle = '#f59e0b';
     ctx.lineWidth = 3;
-    ctx.strokeRect(24, 24, canvasW - 48, canvasH - 48);
-    ctx.globalAlpha = 0.15;
+    ctx.strokeRect(20, 20, canvasW - 40, canvasH - 40);
+    ctx.strokeStyle = 'rgba(245, 158, 11, 0.35)';
     ctx.lineWidth = 1;
-    ctx.strokeRect(32, 32, canvasW - 64, canvasH - 64);
-    ctx.globalAlpha = 1.0;
+    ctx.strokeRect(28, 28, canvasW - 56, canvasH - 56);
 
     const loadLogo = () => new Promise(resolve => {
-        const logo = new Image();
-        logo.crossOrigin = 'Anonymous';
-        logo.onload = () => resolve(logo);
-        logo.onerror = () => resolve(null);
-        logo.src = '/v4-logo.png';
+      const logo = new Image();
+      logo.crossOrigin = 'Anonymous';
+      logo.onload = () => resolve(logo);
+      logo.onerror = () => resolve(null);
+      logo.src = '/logo.png';
     });
 
     const drawRest = async () => {
-        const logo = await loadLogo();
+      const logo = await loadLogo();
 
-        // Logo
-        if (logo) {
-            const logoH = 50;
-            const logoW = logo.width * (logoH / logo.height);
-            ctx.drawImage(logo, (canvasW - logoW) / 2, 70, logoW, logoH);
-        }
+      // Shifted UPWARDS for perfect vertical symmetry:
+      // Top Logo Badge (Circular Gold Frame)
+      const logoCenterY = 65;
+      if (logo) {
+        const logoR = 30;
+        ctx.save();
+        ctx.beginPath();
+        ctx.arc(canvasW / 2, logoCenterY, logoR + 4, 0, Math.PI * 2);
+        ctx.fillStyle = '#f59e0b';
+        ctx.fill();
+        ctx.beginPath();
+        ctx.arc(canvasW / 2, logoCenterY, logoR, 0, Math.PI * 2);
+        ctx.fillStyle = '#090c15';
+        ctx.fill();
+        ctx.clip();
+        ctx.drawImage(logo, canvasW / 2 - logoR, logoCenterY - logoR, logoR * 2, logoR * 2);
+        ctx.restore();
+      }
 
-        // Restaurant Name
-        ctx.fillStyle = theme.text;
-        ctx.font = 'bold 46px Outfit, sans-serif';
+      // Ornamental Flourishes next to logo
+      ctx.strokeStyle = '#f59e0b';
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(canvasW / 2 - 140, logoCenterY);
+      ctx.lineTo(canvasW / 2 - 48, logoCenterY);
+      ctx.moveTo(canvasW / 2 + 48, logoCenterY);
+      ctx.lineTo(canvasW / 2 + 140, logoCenterY);
+      ctx.stroke();
+
+      // Welcome Header
+      ctx.fillStyle = '#ffffff';
+      ctx.font = '900 44px Outfit, sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText('WELCOME', canvasW / 2, 138);
+
+      ctx.fillStyle = '#f59e0b';
+      ctx.font = '800 18px Outfit, sans-serif';
+      ctx.letterSpacing = '2px';
+      ctx.fillText('TO A SMARTER DINING EXPERIENCE', canvasW / 2, 168);
+
+      // Points Above Scanner Card (Top Feature Bar)
+      const topPillW = 540;
+      const topPillH = 38;
+      const topPillX = (canvasW - topPillW) / 2;
+      const topPillY = 186;
+
+      ctx.fillStyle = 'rgba(245, 158, 11, 0.12)';
+      ctx.strokeStyle = 'rgba(245, 158, 11, 0.35)';
+      ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      ctx.roundRect(topPillX, topPillY, topPillW, topPillH, 19);
+      ctx.fill();
+      ctx.stroke();
+
+      ctx.fillStyle = '#fcd34d';
+      ctx.font = '800 13.5px Outfit, sans-serif';
+      ctx.letterSpacing = '1px';
+      ctx.fillText('📱 SCAN THE CODE   •   📖 EXPLORE MENU   •   🍛 ORDER FAVORITES', canvasW / 2, topPillY + 24);
+
+      // Main White Rounded Card Container (Positioned UPWARDS at cardY = 238px)
+      const cardW = 560;
+      const cardH = 680;
+      const cardX = (canvasW - cardW) / 2;
+      const cardY = 238;
+      const cardR = 36;
+
+      ctx.fillStyle = '#ffffff';
+      ctx.beginPath();
+      ctx.roundRect(cardX, cardY, cardW, cardH, cardR);
+      ctx.shadowColor = 'rgba(0,0,0,0.6)';
+      ctx.shadowBlur = 45;
+      ctx.shadowOffsetY = 22;
+      ctx.fill();
+      ctx.shadowColor = 'transparent';
+
+      // Gold Banner Inside Card ("SCAN THIS FOR")
+      const bannerW = 380;
+      const bannerH = 48;
+      const bannerX = (canvasW - bannerW) / 2;
+      const bannerY = cardY + 30;
+
+      ctx.fillStyle = '#d97706';
+      ctx.beginPath();
+      ctx.roundRect(bannerX, bannerY, bannerW, bannerH, 24);
+      ctx.fill();
+
+      ctx.fillStyle = '#ffffff';
+      ctx.font = '900 18px Outfit, sans-serif';
+      ctx.letterSpacing = '2px';
+      ctx.fillText('SCAN THIS FOR', canvasW / 2, bannerY + 30);
+
+      // Large MENU Header
+      ctx.fillStyle = '#060709';
+      ctx.font = '900 58px Outfit, sans-serif';
+      ctx.letterSpacing = '2px';
+      ctx.fillText('MENU', canvasW / 2, cardY + 135);
+
+      ctx.fillStyle = '#f59e0b';
+      ctx.font = '800 15px Outfit, sans-serif';
+      ctx.letterSpacing = '1.5px';
+      ctx.fillText('• CONTACTLESS FAST EASY •', canvasW / 2, cardY + 164);
+
+      // Center High-Contrast Much Bigger QR Code (360px x 360px)
+      const qrSize = 360;
+      const qrX = (canvasW - qrSize) / 2;
+      const qrY = cardY + 185;
+
+      const svgData = new XMLSerializer().serializeToString(svg);
+      const img = new Image();
+
+      img.onload = () => {
+        ctx.drawImage(img, qrX, qrY, qrSize, qrSize);
+
+        // Table Pill Container at Bottom of White Card
+        const pillW = 340;
+        const pillH = 56;
+        const pillX = (canvasW - pillW) / 2;
+        const pillY = cardY + cardH - 74;
+
+        ctx.fillStyle = '#0f1422';
+        ctx.beginPath();
+        ctx.roundRect(pillX, pillY, pillW, pillH, 28);
+        ctx.fill();
+
+        ctx.fillStyle = '#f59e0b';
+        ctx.font = '900 26px Outfit, sans-serif';
+        ctx.letterSpacing = '1px';
+        ctx.fillText(`— TABLE ${table.number} —`, canvasW / 2, pillY + 37);
+
+        // Points Below Scanner Card (Balanced Spacing in the Lower Half)
+        const botBadgesY = cardY + cardH + 48;
+        const badgeSpacing = 210;
+        const startX = canvasW / 2 - badgeSpacing;
+
+        const bottomPoints = [
+          { emoji: '🛡️', title: '100% SAFE', sub: 'Contactless' },
+          { emoji: '🇮🇳', title: 'MADE IN INDIA', sub: 'Hospitality' },
+          { emoji: '🍃', title: 'PAPERLESS', sub: 'Eco-Friendly' }
+        ];
+
+        bottomPoints.forEach((p, idx) => {
+          const bx = startX + idx * badgeSpacing;
+          
+          // Badge Circle Icon
+          ctx.fillStyle = 'rgba(20, 184, 166, 0.15)';
+          ctx.strokeStyle = '#14b8a6';
+          ctx.lineWidth = 1.5;
+          ctx.beginPath();
+          ctx.arc(bx, botBadgesY, 20, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.stroke();
+
+          ctx.font = '18px Outfit, sans-serif';
+          ctx.textAlign = 'center';
+          ctx.fillText(p.emoji, bx, botBadgesY + 6);
+
+          // Text under badge circle
+          ctx.fillStyle = '#ffffff';
+          ctx.font = '800 13px Outfit, sans-serif';
+          ctx.fillText(p.title, bx, botBadgesY + 36);
+
+          ctx.fillStyle = 'rgba(255,255,255,0.65)';
+          ctx.font = '500 11px Outfit, sans-serif';
+          ctx.fillText(p.sub, bx, botBadgesY + 50);
+        });
+
+        // Calligraphic Footer (Balanced spacing fill)
+        const footerY = canvasH - 118;
         ctx.textAlign = 'center';
-        ctx.fillText(restaurantName || 'Scan & Order', canvasW / 2, 175);
-
-        // Subtitle
-        ctx.fillStyle = theme.accent;
-        ctx.font = '600 22px Outfit, sans-serif';
-        ctx.letterSpacing = '2px';
-        ctx.fillText('CONTACTLESS DINING', canvasW / 2, 220);
-
-        // QR Background (White rounded rect)
-        const qrSize = 340;
-        const qrX = (canvasW - qrSize) / 2;
-        const qrY = 280;
-        const padding = 24;
+        ctx.fillStyle = '#fcd34d';
+        ctx.font = 'italic 700 26px Cinzel, serif';
+        ctx.fillText('Thank You!', canvasW / 2, footerY);
 
         ctx.fillStyle = '#ffffff';
+        ctx.font = '800 15px Outfit, sans-serif';
+        ctx.letterSpacing = '2px';
+        ctx.fillText('ENJOY YOUR MEAL', canvasW / 2, footerY + 28);
+
+        // Powered by DinePulse Pill at Bottom
+        const powW = 250;
+        const powH = 38;
+        const powX = (canvasW - powW) / 2;
+        const powY = canvasH - 58;
+
+        ctx.fillStyle = '#d97706';
         ctx.beginPath();
-        const rw = qrSize + padding * 2;
-        const rX = qrX - padding;
-        const rY = qrY - padding;
-        const r = 24;
-        ctx.moveTo(rX + r, rY);
-        ctx.lineTo(rX + rw - r, rY);
-        ctx.arcTo(rX + rw, rY, rX + rw, rY + r, r);
-        ctx.lineTo(rX + rw, rY + rw - r);
-        ctx.arcTo(rX + rw, rY + rw, rX + rw - r, rY + rw, r);
-        ctx.lineTo(rX + r, rY + rw);
-        ctx.arcTo(rX, rY + rw, rX, rY + rw - r, r);
-        ctx.lineTo(rX, rY + r);
-        ctx.arcTo(rX, rY, rX + r, rY, r);
-        ctx.closePath();
-        ctx.shadowColor = 'rgba(0,0,0,0.5)';
-        ctx.shadowBlur = 30;
-        ctx.shadowOffsetY = 15;
+        ctx.roundRect(powX, powY, powW, powH, 19);
         ctx.fill();
-        
-        ctx.shadowColor = 'transparent';
-        ctx.shadowBlur = 0;
-        ctx.shadowOffsetY = 0;
 
-        // Draw SVG onto canvas
-        const svgData = new XMLSerializer().serializeToString(svg);
-        const img = new Image();
-        img.onload = () => {
-            ctx.drawImage(img, qrX, qrY, qrSize, qrSize);
+        ctx.fillStyle = '#060709';
+        ctx.font = '800 13px Outfit, sans-serif';
+        ctx.letterSpacing = '1px';
+        ctx.fillText('POWERED BY DINEPULSE', canvasW / 2, powY + 24);
 
-            // Table Number
-            ctx.fillStyle = theme.text;
-            ctx.font = 'bold 42px Outfit, sans-serif';
-            ctx.fillText(`TABLE ${table.number}`, canvasW / 2, qrY + qrSize + padding + 65);
+        // Download Image
+        const link = document.createElement('a');
+        link.download = `DinePulse-Table-${table.number}-Standee.png`;
+        link.href = canvas.toDataURL('image/png', 1.0);
+        link.click();
+      };
 
-            // Trust Badges / Sayings with SVG Logos
-            const badgeColor = theme.id === 'light' ? 'rgba(26, 26, 46, 0.9)' : 'rgba(255, 255, 255, 0.9)';
-            
-            const drawIcon = (pathD, x, y) => {
-                ctx.save();
-                ctx.translate(x, y);
-                ctx.scale(20/24, 20/24); // Size to 20px
-                ctx.strokeStyle = badgeColor;
-                ctx.lineWidth = 2.5;
-                ctx.lineCap = 'round';
-                ctx.lineJoin = 'round';
-                if (Array.isArray(pathD)) {
-                    pathD.forEach(d => ctx.stroke(new Path2D(d)));
-                } else {
-                    ctx.stroke(new Path2D(pathD));
-                }
-                ctx.restore();
-            };
-
-            const badgeY = canvasH - 120;
-            ctx.fillStyle = badgeColor;
-            ctx.font = '500 17px Outfit, sans-serif';
-            ctx.textAlign = 'left';
-
-            // Safe Shield
-            drawIcon(['M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z', 'm9 12 2 2 4-4'], 55, badgeY - 16);
-            ctx.fillText('100% Safe', 82, badgeY);
-
-            // India Star
-            const starD = 'M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z';
-            drawIcon(starD, 195, badgeY - 16);
-            ctx.fillText('100% Made in India', 222, badgeY);
-
-            // Smartphone
-            const phoneD = ['M5 2h14a2 2 0 0 1 2 2v16a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2z', 'M12 18h.01'];
-            drawIcon(phoneD, 400, badgeY - 16);
-            ctx.fillText('No App Required', 427, badgeY);
-
-            // Footer branding
-            ctx.textAlign = 'center';
-            ctx.font = '400 14px Outfit, sans-serif';
-            ctx.fillStyle = theme.id === 'light' ? 'rgba(26, 26, 46, 0.4)' : 'rgba(255, 255, 255, 0.4)';
-            ctx.fillText('Powered by Taste by v4stay', canvasW / 2, canvasH - 45);
-
-            // Download
-            const link = document.createElement('a');
-            link.download = `Taste-by-v4stay-Table-${table.number}.png`;
-            link.href = canvas.toDataURL('image/png', 1.0);
-            link.click();
-        };
-        img.src = 'data:image/svg+xml;base64,' + btoa(unescape(encodeURIComponent(svgData)));
+      img.src = 'data:image/svg+xml;base64,' + btoa(unescape(encodeURIComponent(svgData)));
     };
 
     drawRest();
@@ -338,19 +426,19 @@ function TableCard({ table, userId, baseUrl, restaurantName, theme, onDelete }) 
       {/* Header */}
       <div style={{ width: '100%', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <h3 style={{ fontWeight: '800', fontSize: '1.1rem' }}>
-          Table <span className="text-gradient">{table.number}</span>
+          Table <span className="text-gradient-gold">{table.number}</span>
         </h3>
-        <button onClick={onDelete} style={{ background: 'rgba(255,71,87,0.1)', border: 'none', borderRadius: '8px', padding: '6px', cursor: 'pointer', color: 'var(--primary)', display: 'flex' }}>
+        <button onClick={onDelete} style={{ background: 'rgba(239,68,68,0.1)', border: 'none', borderRadius: '8px', padding: '6px', cursor: 'pointer', color: '#ef4444', display: 'flex' }}>
           <Trash2 size={15} />
         </button>
       </div>
 
       {/* QR Code */}
-      <div ref={svgRef} style={{ background: 'white', padding: '16px', borderRadius: '16px', boxShadow: '0 2px 12px rgba(0,0,0,0.08)' }}>
+      <div ref={svgRef} style={{ background: 'white', padding: '16px', borderRadius: '16px', boxShadow: '0 4px 20px rgba(0,0,0,0.15)' }}>
         <QRCodeSVG
           value={qrUrl}
           size={180}
-          fgColor="#1a1a2e"
+          fgColor="#060709"
           bgColor="#ffffff"
           level="M"
         />
@@ -361,14 +449,14 @@ function TableCard({ table, userId, baseUrl, restaurantName, theme, onDelete }) 
         <div style={{ flex: 1, background: 'var(--bg-color)', borderRadius: '10px', padding: '8px 12px', fontSize: '0.72rem', color: 'var(--text-muted)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
           {qrUrl}
         </div>
-        <button onClick={copyLink} style={{ background: copied ? 'rgba(46,213,115,0.15)' : 'var(--bg-color)', border: 'none', borderRadius: '10px', padding: '8px 10px', cursor: 'pointer', color: copied ? '#2ed573' : 'var(--text-muted)', display: 'flex', flexShrink: 0 }}>
+        <button onClick={copyLink} style={{ background: copied ? 'rgba(20,184,166,0.15)' : 'var(--bg-color)', border: 'none', borderRadius: '10px', padding: '8px 10px', cursor: 'pointer', color: copied ? '#14b8a6' : 'var(--text-muted)', display: 'flex', flexShrink: 0 }}>
           {copied ? <Check size={16} /> : <Copy size={16} />}
         </button>
       </div>
 
       {/* Actions */}
-      <button className="btn-primary" style={{ width: '100%' }} onClick={downloadQR}>
-        <Download size={16} /> Download QR Code
+      <button className="btn-primary" style={{ width: '100%', fontSize: '0.9rem', padding: '12px' }} onClick={downloadQR}>
+        <Download size={15} /> Download Standee Poster
       </button>
     </div>
   );

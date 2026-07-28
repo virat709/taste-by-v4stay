@@ -84,8 +84,8 @@ export default function StaffDashboard() {
       <header style={{ background: 'var(--surface)', borderBottom: '1px solid var(--border)', padding: '16px 24px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', position: 'sticky', top: 0, zIndex: 10 }}>
         <div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontWeight: '800', fontSize: '1.4rem', letterSpacing: '-0.5px' }}>
-            <img src="/v4-logo.png" alt="v4stay" style={{ height: '28px' }} />
-            <span>Taste Staff</span>
+            <img src="/logo.png" alt="DinePulse" style={{ height: '28px', width: 'auto', borderRadius: '6px' }} />
+            <span>DinePulse Staff</span>
           </div>
           <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)', fontWeight: '600' }}>
             {session.restaurantName}

@@ -4,8 +4,9 @@ import { AdminLayout } from './Dashboard';
 import { useAuth } from '../../context/AuthContext';
 import { db } from '../../lib/firebase';
 import { doc, getDoc, updateDoc, collection, addDoc, serverTimestamp, onSnapshot, query, orderBy } from 'firebase/firestore';
-import { Save, Settings as SettingsIcon, Crown, CheckCircle, Copy, Check, Smartphone, ArrowRight } from 'lucide-react';
+import { Save, Settings as SettingsIcon, Crown, CheckCircle, Copy, Check, Smartphone, ArrowRight, CreditCard, Shield } from 'lucide-react';
 import { getEffectivePlan, getTrialDaysRemaining, PLAN_LABELS, PLAN_FEATURES, PROVIDER_UPI_ID, PREMIUM_PRICE, PREMIUM_PRICE_LABEL } from '../../lib/subscription';
+import { initializeRazorpayPayment } from '../../lib/razorpay';
 
 export default function Settings() {
   const { user } = useAuth();
@@ -16,6 +17,7 @@ export default function Settings() {
     currency: '₹',
     taxRate: 0,
     upiId: '',
+    razorpayKeyId: '',
     staffPin: ''
   });
   const [loading, setLoading] = useState(false);
@@ -42,6 +44,7 @@ export default function Settings() {
             currency: data.currency || '₹',
             taxRate: data.taxRate || 0,
             upiId: data.upiId || '',
+            razorpayKeyId: data.razorpayKeyId || '',
             staffPin: data.staffPin || ''
           });
         }
@@ -65,6 +68,51 @@ export default function Settings() {
       err => console.error('Payments snapshot error:', err)
     );
   }, [user]);
+
+  const handleRazorpayUpgrade = async () => {
+    if (!user) return;
+    setSubmittingPayment(true);
+    try {
+      await initializeRazorpayPayment({
+        amount: PREMIUM_PRICE,
+        currency: 'INR',
+        name: 'DinePulse Premium',
+        description: '1-Year Premium SaaS Subscription',
+        prefill: {
+          name: formData.name || user.displayName || '',
+          email: user.email || '',
+          contact: formData.phone || ''
+        },
+        onSuccess: async (res) => {
+          await addDoc(collection(db, 'restaurants', user.uid, 'payments'), {
+            paymentId: res.razorpay_payment_id,
+            method: 'Razorpay',
+            amount: PREMIUM_PRICE,
+            status: 'approved',
+            createdAt: serverTimestamp(),
+          });
+          await updateDoc(doc(db, 'restaurants', user.uid), {
+            plan: 'paid',
+            upgradedAt: serverTimestamp(),
+            razorpayPaymentId: res.razorpay_payment_id
+          });
+          setMessage('🎉 Razorpay Payment successful! Account upgraded to Premium.');
+          setTimeout(() => { setMessage(''); navigate('/admin'); }, 1500);
+          setSubmittingPayment(false);
+        },
+        onFailure: (err) => {
+          setSubmittingPayment(false);
+          if (!err?.dismissed) {
+            setMessage('Razorpay Payment failed. Please try again.');
+          }
+        }
+      });
+    } catch (err) {
+      console.error('Razorpay Upgrade Error:', err);
+      setSubmittingPayment(false);
+      setMessage('Failed to open Razorpay checkout modal.');
+    }
+  };
 
   const submitPaymentProof = async () => {
     if (!utrNumber.trim()) return;
@@ -118,10 +166,16 @@ export default function Settings() {
     <AdminLayout>
       <div style={{ marginBottom: '28px' }}>
         <h1 style={{ fontSize: '1.9rem', fontWeight: '800', marginBottom: '4px', display: 'flex', alignItems: 'center', gap: '10px' }}>
-          <SettingsIcon /> Settings
+          <SettingsIcon size={22} /> Settings
         </h1>
-        <p style={{ color: 'var(--text-muted)' }}>Manage your restaurant details, payments, and staff access.</p>
+        <p style={{ color: 'var(--text-muted)' }}>Manage your restaurant details, Razorpay payments, and staff access.</p>
       </div>
+
+      {message && (
+        <div style={{ background: 'rgba(245, 158, 11, 0.15)', color: '#f59e0b', border: '1px solid rgba(245, 158, 11, 0.3)', padding: '14px 20px', borderRadius: '14px', marginBottom: '20px', fontWeight: '700', fontSize: '0.92rem' }}>
+          {message}
+        </div>
+      )}
 
       {loading ? (
         <div style={{ textAlign: 'center', padding: '40px' }}>Loading settings...</div>
@@ -133,7 +187,7 @@ export default function Settings() {
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '12px' }}>
               <div>
                 <h2 style={{ fontSize: '1.2rem', fontWeight: '700', marginBottom: '4px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  <Crown size={20} color={getEffectivePlan(formData) === 'free' ? 'var(--text-muted)' : '#feca57'} /> Plan
+                  <Crown size={18} color={getEffectivePlan(formData) === 'free' ? 'var(--text-muted)' : '#f59e0b'} /> Subscription Plan
                 </h2>
                 <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginBottom: '16px' }}>
                   {getEffectivePlan(formData) === 'paid'
@@ -143,32 +197,39 @@ export default function Settings() {
                       : 'Your trial has ended. Upgrade to unlock all features.'}
                 </p>
               </div>
-              <span style={{ padding: '8px 16px', borderRadius: '50px', fontSize: '0.85rem', fontWeight: '800', background: getEffectivePlan(formData) === 'paid' ? 'rgba(46,213,115,0.15)' : getEffectivePlan(formData) === 'trial' ? 'rgba(30,144,255,0.15)' : 'rgba(164,176,190,0.15)', color: getEffectivePlan(formData) === 'paid' ? '#2ed573' : getEffectivePlan(formData) === 'trial' ? '#1e90ff' : 'var(--text-muted)' }}>
+              <span style={{ padding: '6px 14px', borderRadius: '50px', fontSize: '0.82rem', fontWeight: '800', background: getEffectivePlan(formData) === 'paid' ? 'rgba(20,184,166,0.15)' : getEffectivePlan(formData) === 'trial' ? 'rgba(245,158,11,0.15)' : 'rgba(164,176,190,0.15)', color: getEffectivePlan(formData) === 'paid' ? '#14b8a6' : getEffectivePlan(formData) === 'trial' ? '#f59e0b' : 'var(--text-muted)' }}>
                 {PLAN_LABELS[getEffectivePlan(formData)]?.label || 'Free'}
               </span>
             </div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '16px' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '20px' }}>
               {(PLAN_FEATURES[getEffectivePlan(formData)] || []).map(f => (
                 <div key={f} style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.9rem', color: 'var(--text-muted)' }}>
-                  <CheckCircle size={16} color="#2ed573" /> {f}
+                  <CheckCircle size={15} color="#14b8a6" /> {f}
                 </div>
               ))}
             </div>
-            {getEffectivePlan(formData) !== 'paid' && !showPaymentForm && (
-              <div>
-                <button type="button" onClick={() => setShowPaymentForm(true)}
-                  style={{ padding: '14px 32px', background: 'linear-gradient(135deg, #ff4757, #ff6b81)', border: 'none', borderRadius: '12px', color: 'white', fontWeight: '800', fontSize: '0.95rem', cursor: 'pointer', fontFamily: 'inherit', boxShadow: '0 4px 16px rgba(255,71,87,0.3)', display: 'inline-flex', alignItems: 'center', gap: '8px' }}>
-                  <ArrowRight size={20} /> Upgrade to Premium — ₹14,999/year
+
+            {getEffectivePlan(formData) !== 'paid' && (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                <button type="button" onClick={handleRazorpayUpgrade} disabled={submittingPayment}
+                  style={{ padding: '14px 28px', background: 'linear-gradient(135deg, #d97706, #f59e0b)', border: 'none', borderRadius: '14px', color: '#060709', fontWeight: '800', fontSize: '0.95rem', cursor: 'pointer', fontFamily: 'inherit', boxShadow: '0 6px 20px rgba(245,158,11,0.35)', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
+                  <CreditCard size={18} /> {submittingPayment ? 'Processing Razorpay...' : 'Instant Upgrade via Razorpay — ₹14,999/yr'}
                 </button>
+
+                {!showPaymentForm && (
+                  <button type="button" onClick={() => setShowPaymentForm(true)} style={{ background: 'none', border: 'none', color: 'var(--text-muted)', fontSize: '0.85rem', cursor: 'pointer', textDecoration: 'underline' }}>
+                    Or pay via Manual UPI Reference / UTR
+                  </button>
+                )}
 
                 {paymentRequests.length > 0 && (
                   <div style={{ marginTop: '16px' }}>
                     <div style={{ fontSize: '0.85rem', fontWeight: '600', color: 'var(--text-muted)', marginBottom: '8px' }}>Payment History</div>
                     {paymentRequests.map(p => (
                       <div key={p.id} style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '10px 14px', background: 'var(--bg-color)', borderRadius: '10px', marginBottom: '6px', fontSize: '0.85rem' }}>
-                        <span style={{ fontWeight: '600' }}>UTR: {p.utr}</span>
-                        <span style={{ marginLeft: 'auto', padding: '3px 10px', borderRadius: '50px', fontSize: '0.75rem', fontWeight: '700', background: p.status === 'approved' ? 'rgba(46,213,115,0.15)' : p.status === 'rejected' ? 'rgba(255,71,87,0.15)' : 'rgba(255,159,67,0.15)', color: p.status === 'approved' ? '#2ed573' : p.status === 'rejected' ? '#ff4757' : '#ff9f43' }}>
-                          {p.status === 'approved' ? 'Approved' : p.status === 'rejected' ? 'Rejected' : 'Pending'}
+                        <span style={{ fontWeight: '600' }}>{p.method === 'Razorpay' ? `Razorpay ID: ${p.paymentId}` : `UTR: ${p.utr}`}</span>
+                        <span style={{ marginLeft: 'auto', padding: '3px 10px', borderRadius: '50px', fontSize: '0.75rem', fontWeight: '700', background: p.status === 'approved' ? 'rgba(20,184,166,0.15)' : 'rgba(245,158,11,0.15)', color: p.status === 'approved' ? '#14b8a6' : '#f59e0b' }}>
+                          {p.status === 'approved' ? 'Approved' : 'Pending'}
                         </span>
                       </div>
                     ))}
@@ -179,7 +240,7 @@ export default function Settings() {
 
             {showPaymentForm && (
               <div className="animate-fade-in" style={{ marginTop: '16px', background: 'var(--bg-color)', borderRadius: '16px', padding: '20px', border: '1px solid var(--border)' }}>
-                <h3 style={{ fontWeight: '700', fontSize: '1rem', marginBottom: '16px' }}>Pay {PREMIUM_PRICE_LABEL} via UPI</h3>
+                <h3 style={{ fontWeight: '700', fontSize: '1rem', marginBottom: '16px' }}>Pay {PREMIUM_PRICE_LABEL} via Manual UPI</h3>
 
                 <div style={{ background: 'var(--surface)', borderRadius: '12px', padding: '16px', border: '1px solid var(--border)', marginBottom: '16px', textAlign: 'center' }}>
                   <div style={{ fontSize: '0.82rem', color: 'var(--text-muted)', marginBottom: '4px' }}>Pay to this UPI ID</div>
@@ -187,11 +248,11 @@ export default function Settings() {
                   <div style={{ display: 'flex', gap: '8px', justifyContent: 'center' }}>
                     <button type="button" onClick={() => { navigator.clipboard.writeText(PROVIDER_UPI_ID); setCopied(true); setTimeout(() => setCopied(false), 2000); }}
                       style={{ background: 'var(--bg-color)', border: '1px solid var(--border)', borderRadius: '10px', padding: '8px 16px', cursor: 'pointer', fontSize: '0.85rem', fontWeight: '600', fontFamily: 'inherit', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                      {copied ? <><Check size={15} color="#2ed573" /> Copied</> : <><Copy size={15} /> Copy UPI ID</>}
+                      {copied ? <><Check size={14} color="#14b8a6" /> Copied</> : <><Copy size={14} /> Copy UPI ID</>}
                     </button>
-                    <a href={`upi://pay?pa=${PROVIDER_UPI_ID}&pn=Taste%20by%20v4stay&am=${PREMIUM_PRICE}&cu=INR`}
-                      style={{ background: '#7c3aed', border: 'none', borderRadius: '10px', padding: '8px 16px', cursor: 'pointer', fontSize: '0.85rem', fontWeight: '600', fontFamily: 'inherit', color: 'white', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                      <Smartphone size={15} /> Pay via UPI App
+                    <a href={`upi://pay?pa=${PROVIDER_UPI_ID}&pn=DinePulse&am=${PREMIUM_PRICE}&cu=INR`}
+                      style={{ background: 'linear-gradient(135deg, #0f766e, #14b8a6)', border: 'none', borderRadius: '10px', padding: '8px 16px', cursor: 'pointer', fontSize: '0.85rem', fontWeight: '600', fontFamily: 'inherit', color: 'white', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                      <Smartphone size={14} /> Pay via UPI App
                     </a>
                   </div>
                 </div>
@@ -236,38 +297,44 @@ export default function Settings() {
                 <input className="input-field" type="number" min="0" step="0.1" name="taxRate" value={formData.taxRate} onChange={handleChange} />
               </div>
             </div>
-            
           </div>
 
-          {/* Payment Settings */}
+          {/* Guest Payment Settings (UPI ID) */}
           <div style={{ background: 'var(--surface)', padding: '24px', borderRadius: '20px', border: '1px solid var(--border)' }}>
-            <h2 style={{ fontSize: '1.2rem', fontWeight: '700', marginBottom: '20px' }}>Guest Payments (UPI)</h2>
+            <h2 style={{ fontSize: '1.2rem', fontWeight: '700', marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <CreditCard size={18} color="#f59e0b" /> Table Payment Settings
+            </h2>
+            <p style={{ fontSize: '0.88rem', color: 'var(--text-muted)', marginBottom: '20px' }}>
+              Configure your restaurant's UPI ID for direct guest table payments.
+            </p>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '16px' }}>
               <div>
-                <label style={{ display: 'block', marginBottom: '8px', fontSize: '0.85rem', fontWeight: '600', color: 'var(--text-muted)' }}>UPI ID (VPA)</label>
-                <input className="input-field" name="upiId" value={formData.upiId} onChange={handleChange} placeholder="yourname@bank" />
+                <label style={{ display: 'block', marginBottom: '8px', fontSize: '0.85rem', fontWeight: '600', color: 'var(--text-muted)' }}>Restaurant UPI ID / VPA</label>
+                <input className="input-field" name="upiId" value={formData.upiId} onChange={handleChange} placeholder="yourrestaurant@upi" />
+                <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)', marginTop: '6px' }}>
+                  Guests will see this UPI ID / QR code at checkout when paying for their meals.
+                </div>
               </div>
             </div>
           </div>
 
-          {/* Staff Access */}
+          {/* Staff Access PIN */}
           <div style={{ background: 'var(--surface)', padding: '24px', borderRadius: '20px', border: '1px solid var(--border)' }}>
-            <h2 style={{ fontSize: '1.2rem', fontWeight: '700', marginBottom: '8px' }}>Staff Access</h2>
-            <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginBottom: '20px' }}>
-              Set a 4-digit PIN for your waiters. They can login at <strong>{window.location.origin}/staff</strong> using your Restaurant ID: <code style={{background: 'var(--bg-color)', padding: '2px 6px', borderRadius: '4px'}}>{user?.uid}</code>
-            </p>
-            <div>
-              <label style={{ display: 'block', marginBottom: '8px', fontSize: '0.85rem', fontWeight: '600', color: 'var(--text-muted)' }}>Staff PIN (4 digits)</label>
-              <input className="input-field" name="staffPin" type="password" maxLength={4} pattern="\d{4}" value={formData.staffPin} onChange={handleChange} placeholder="e.g. 1234" style={{ maxWidth: '150px', letterSpacing: '4px', fontSize: '1.2rem', textAlign: 'center' }} />
+            <h2 style={{ fontSize: '1.2rem', fontWeight: '700', marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <Shield size={18} color="#14b8a6" /> Staff Security PIN
+            </h2>
+            <p style={{ fontSize: '0.88rem', color: 'var(--text-muted)', marginBottom: '16px' }}>Set a 4-digit PIN for waitstaff and kitchen KDS login access.</p>
+            <div style={{ maxWidth: '300px' }}>
+              <input className="input-field" name="staffPin" type="password" maxLength={6} value={formData.staffPin} onChange={handleChange} placeholder="e.g. 1234" />
             </div>
           </div>
 
-          <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-            <button type="submit" className="btn-primary" disabled={saving}>
-              <Save size={18} /> {saving ? 'Saving...' : 'Save Settings'}
+          <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+            <button type="submit" disabled={saving} className="btn-primary" style={{ padding: '14px 36px', fontSize: '0.98rem', display: 'inline-flex', alignItems: 'center', gap: '8px' }}>
+              <Save size={16} /> {saving ? 'Saving...' : 'Save Settings'}
             </button>
-            {message && <span style={{ color: message.includes('failed') || message.includes('Error') ? '#ff4757' : '#2ed573', fontWeight: '600' }}>{message}</span>}
           </div>
+
         </form>
       )}
     </AdminLayout>

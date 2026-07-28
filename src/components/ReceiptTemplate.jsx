@@ -290,7 +290,7 @@ export const printReceipt = (order, restaurant) => {
 
         <div class="footer">
           <p>Thank you for dining with us!</p>
-          <p>Powered by Taste by v4stay</p>
+          <p>Powered by DinePulse</p>
         </div>
       </body>
     </html>

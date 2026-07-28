@@ -29,8 +29,8 @@ export function AdminLayout({ children, restaurantName }) {
     <div style={{ padding: inDrawer ? '0' : '24px 12px', display: 'flex', flexDirection: 'column', height: '100%' }}>
       <div style={{ padding: inDrawer ? '24px 12px 16px' : '8px 12px', marginBottom: inDrawer ? '0' : '32px' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px', fontWeight: '800', fontSize: '1.6rem', letterSpacing: '-0.5px' }}>
-          <img src="/v4-logo.png" alt="v4stay" style={{ height: '32px' }} />
-          <span>Taste</span>
+          <img src="/logo.png" alt="DinePulse" style={{ height: '32px', width: 'auto', borderRadius: '8px' }} />
+          <span>DinePulse</span>
         </div>
         {restaurantName && <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginTop: '4px', fontWeight: '500' }}>{restaurantName}</div>}
       </div>
@@ -42,7 +42,7 @@ export function AdminLayout({ children, restaurantName }) {
             <Link key={item.to} to={item.to} onClick={() => setSidebarOpen(false)} style={{
               display: 'flex', alignItems: 'center', gap: '12px', padding: '12px 14px', borderRadius: '12px',
               textDecoration: 'none', fontWeight: '600', fontSize: '0.92rem', transition: 'all 0.2s',
-              background: active ? 'rgba(255,71,87,0.1)' : 'transparent',
+              background: active ? 'rgba(245,158,11,0.12)' : 'transparent',
               color: active ? 'var(--primary)' : 'var(--text-muted)',
             }}>
               {item.icon} {item.label}
@@ -83,8 +83,8 @@ export function AdminLayout({ children, restaurantName }) {
           <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
         </button>
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontWeight: '800', fontSize: '1.2rem' }}>
-          <img src="/v4-logo.png" alt="v4stay" style={{ height: '24px' }} />
-          <span>Taste</span>
+          <img src="/logo.png" alt="DinePulse" style={{ height: '24px', width: 'auto', borderRadius: '6px' }} />
+          <span>DinePulse</span>
         </div>
         <div style={{ width: '36px' }} />
       </div>
