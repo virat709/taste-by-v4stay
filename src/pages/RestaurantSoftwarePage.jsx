@@ -1,4 +1,3 @@
-import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowRight, Smartphone, Zap, BarChart3 } from 'lucide-react';
 import { Helmet } from 'react-helmet-async';

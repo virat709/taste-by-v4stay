@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { doc, onSnapshot, collection, query, orderBy, updateDoc } from 'firebase/firestore';
 import { db } from '../../lib/firebase';
@@ -7,29 +7,23 @@ import { printKitchenTicket } from '../../components/ReceiptTemplate';
 
 export default function StaffDashboard() {
   const navigate = useNavigate();
-  const [session, setSession] = useState(null);
-  const [restaurant, setRestaurant] = useState(null);
+  const [session] = useState(() => {
+    const data = localStorage.getItem('staffSession');
+    return data ? JSON.parse(data) : null;
+  });
   const [orders, setOrders] = useState([]);
   const audioRef = useRef(null);
   const prevPendingCount = useRef(0);
 
   useEffect(() => {
-    const data = localStorage.getItem('staffSession');
-    if (!data) {
+    if (!session) {
       navigate('/staff');
-      return;
     }
-    setSession(JSON.parse(data));
-  }, [navigate]);
+  }, [session, navigate]);
 
   useEffect(() => {
     if (!session?.restaurantId) return;
     
-    // Listen to restaurant details (currency etc)
-    const unsubRest = onSnapshot(doc(db, 'restaurants', session.restaurantId), snap => {
-      if (snap.exists()) setRestaurant(snap.data());
-    });
-
     // Listen to live orders
     const q = query(collection(db, 'restaurants', session.restaurantId, 'orders'), orderBy('createdAt', 'desc'));
     const unsubOrders = onSnapshot(q, snap => {
@@ -43,10 +37,7 @@ export default function StaffDashboard() {
       setOrders(todayOrders);
     });
 
-    return () => {
-      unsubRest();
-      unsubOrders();
-    };
+    return unsubOrders;
   }, [session]);
 
   const updateStatus = async (orderId, status) => {
@@ -68,14 +59,12 @@ export default function StaffDashboard() {
 
   useEffect(() => {
     if (pendingOrders.length > prevPendingCount.current && prevPendingCount.current > 0) {
-      try { audioRef.current?.play(); } catch {}
+      try { audioRef.current?.play(); } catch { /* ignore audio play error */ }
     }
     prevPendingCount.current = pendingOrders.length;
   }, [pendingOrders.length]);
 
   if (!session) return null;
-
-  const currency = restaurant?.currency || '₹';
 
   return (
     <div style={{ minHeight: '100vh', backgroundColor: 'var(--bg-color)', fontFamily: 'Outfit, sans-serif' }}>
@@ -116,7 +105,7 @@ export default function StaffDashboard() {
             </div>
           ) : (
             orders.map(order => (
-              <StaffOrderCard key={order.id} order={order} currency={currency} onUpdateStatus={updateStatus} onMarkSentToKitchen={markSentToKitchen} />
+              <StaffOrderCard key={order.id} order={order} onUpdateStatus={updateStatus} onMarkSentToKitchen={markSentToKitchen} />
             ))
           )}
         </div>
@@ -125,7 +114,7 @@ export default function StaffDashboard() {
   );
 }
 
-function StaffOrderCard({ order, currency, onUpdateStatus, onMarkSentToKitchen }) {
+function StaffOrderCard({ order, onUpdateStatus, onMarkSentToKitchen }) {
   const statusConfig = {
     pending: { label: 'Pending', color: '#ff9f43', next: 'preparing', nextLabel: 'Start' },
     preparing: { label: 'Preparing', color: '#1e90ff', next: 'ready', nextLabel: 'Ready' },
@@ -153,7 +142,7 @@ function StaffOrderCard({ order, currency, onUpdateStatus, onMarkSentToKitchen }
   };
 
   return (
-    <div style={{ background: 'var(--surface)', border: `1px solid ${order.status === 'pending' ? '#ff4757' : order.status === 'preparing' ? '#1e90ff' : 'var(--border)'}`, borderRadius: '12px', padding: '12px 20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '16px', flexWrap: 'nowrap', minHeight: '56px', boxShadow: order.status === 'pending' ? '0 2px 8px rgba(255,71,87,0.05)' : 'none' }}>
+    <div className="order-row-mobile" style={{ background: 'var(--surface)', border: `1px solid ${order.status === 'pending' ? '#ff4757' : order.status === 'preparing' ? '#1e90ff' : 'var(--border)'}`, borderRadius: '12px', padding: '12px 20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px', flexWrap: 'wrap', minHeight: '56px', boxShadow: order.status === 'pending' ? '0 2px 8px rgba(255,71,87,0.05)' : 'none' }}>
       {/* Left side: Table Number & Items List */}
       <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flex: 1, minWidth: 0 }}>
         {/* Table badge with icon */}

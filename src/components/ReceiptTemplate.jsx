@@ -139,7 +139,7 @@ export const printKitchenTicket = (order) => {
     try {
       printWindow.print();
       printWindow.close();
-    } catch (e) { /* window already closed */ }
+    } catch { /* window already closed */ }
   }, 400);
 };
 
@@ -309,6 +309,6 @@ export const printReceipt = (order, restaurant) => {
     try {
       printWindow.print();
       printWindow.close();
-    } catch (e) { /* window already closed */ }
+    } catch { /* window already closed */ }
   }, 500);
 };

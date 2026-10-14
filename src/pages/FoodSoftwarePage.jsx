@@ -1,4 +1,3 @@
-import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowRight, Utensils, Cpu, ShieldCheck } from 'lucide-react';
 import { Helmet } from 'react-helmet-async';

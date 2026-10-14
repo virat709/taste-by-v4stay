@@ -1,9 +1,9 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { 
-  ArrowRight, CheckCircle, Smartphone, Zap, BarChart3, ShieldCheck, 
-  HelpCircle, Star, Sparkles, ChefHat, Clock, CreditCard, ChevronRight, 
-  Plus, ShoppingBag, Layers, Flame, TrendingUp, Sun, Moon, Wine, Award
+  ArrowRight, CheckCircle, Smartphone, BarChart3,
+  HelpCircle, Star, Sparkles, ChefHat, ChevronRight,
+  Plus, ShoppingBag, Flame, TrendingUp, Sun, Moon, Wine, Award
 } from 'lucide-react';
 import { Helmet } from 'react-helmet-async';
 
