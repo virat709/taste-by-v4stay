@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { AdminLayout } from './Dashboard';
 import { useAuth } from '../../context/AuthContext';
 import { db } from '../../lib/firebase';
@@ -11,7 +11,7 @@ export default function Feedback() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (!user) { setLoading(false); return; }
+    if (!user) return;
     const q = query(collection(db, 'restaurants', user.uid, 'feedback'), orderBy('createdAt', 'desc'));
     const unsubscribe = onSnapshot(q,
       (snap) => {

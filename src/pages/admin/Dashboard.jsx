@@ -1,11 +1,11 @@
-import React, { useEffect, useState, useRef } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { LayoutDashboard, UtensilsCrossed, Grid2x2, LogOut, Bell, BarChart3, Settings, ExternalLink, MessageSquare } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { doc, onSnapshot, collection, query, orderBy, updateDoc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { db } from '../../lib/firebase';
 import { printReceipt, printKitchenTicket } from '../../components/ReceiptTemplate';
-import { getEffectivePlan, getTrialDaysRemaining, PLAN_LABELS } from '../../lib/subscription';
+import { getEffectivePlan } from '../../lib/subscription';
 
 // ─── Shared Layout ─────────────────────────────────────────────────────────────
 export function AdminLayout({ children, restaurantName }) {
@@ -169,7 +169,7 @@ export default function Dashboard() {
 
   useEffect(() => {
     if (pendingOrders.length > prevPendingCount.current && prevPendingCount.current > 0) {
-      try { audioRef.current?.play(); } catch {}
+      try { audioRef.current?.play(); } catch { /* ignore audio play error */ }
     }
     prevPendingCount.current = pendingOrders.length;
   }, [pendingOrders.length]);
@@ -266,16 +266,6 @@ export default function Dashboard() {
   );
 }
 
-function StatCard({ label, value, sub, color }) {
-  return (
-    <div style={{ background: 'var(--surface)', borderRadius: '18px', padding: '22px 24px', border: '1px solid var(--border)', borderLeft: `4px solid ${color}` }}>
-      <p style={{ color: 'var(--text-muted)', fontSize: '0.8rem', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '10px' }}>{label}</p>
-      <p style={{ fontSize: '2.2rem', fontWeight: '800', marginBottom: '8px', lineHeight: 1 }}>{value}</p>
-      <span style={{ background: `${color}18`, color, borderRadius: '50px', padding: '3px 10px', fontSize: '0.76rem', fontWeight: '700' }}>{sub}</span>
-    </div>
-  );
-}
-
 function OrderRow({ order, restaurant, currency, onUpdateStatus, onMarkSentToKitchen }) {
   const statusConfig = {
     pending: { label: 'Pending', color: '#ff9f43', next: 'preparing', nextLabel: 'Start' },
@@ -304,7 +294,7 @@ function OrderRow({ order, restaurant, currency, onUpdateStatus, onMarkSentToKit
   };
 
   return (
-    <div style={{ padding: '12px 20px', borderBottom: '1px solid var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '16px', flexWrap: 'nowrap', minHeight: '56px' }}>
+    <div className="order-row-mobile" style={{ padding: '12px 20px', borderBottom: '1px solid var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px', flexWrap: 'wrap', minHeight: '56px' }}>
       {/* Left side: Table Number & Items List */}
       <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flex: 1, minWidth: 0 }}>
         {/* Table badge with icon */}

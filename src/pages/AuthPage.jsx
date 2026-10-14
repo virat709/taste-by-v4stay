@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { doc, setDoc, serverTimestamp, Timestamp } from 'firebase/firestore';
 import { db } from '../lib/firebase';
@@ -167,6 +167,20 @@ export default function AuthPage() {
             </>
           )}
         </form>
+
+        <div style={{ textAlign: 'center', marginTop: '16px' }}>
+          <button
+            type="button"
+            onClick={() => {
+              setMode(mode === 'login' ? 'signup' : 'login');
+              setError('');
+            }}
+            style={{ background: 'none', border: 'none', color: '#ff4757', cursor: 'pointer', fontSize: '0.9rem', fontWeight: '600', fontFamily: 'inherit', textDecoration: 'underline' }}
+          >
+            {mode === 'login' ? "Don't have an account? Sign up" : "Already have an account? Sign in"}
+          </button>
+        </div>
+
         <div style={{ textAlign: 'center', marginTop: '20px', fontSize: '0.82rem', color: 'rgba(255,255,255,0.3)' }}>
           By continuing, you agree to our{' '}
           <span onClick={() => window.open('/terms', '_blank')} style={{ color: 'rgba(255,255,255,0.5)', cursor: 'pointer', textDecoration: 'underline' }}>Terms</span>
