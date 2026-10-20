@@ -271,3 +271,106 @@ h1, h2, h3, h4 {
 ::-webkit-scrollbar { width: 8px; }
 ::-webkit-scrollbar-track { background: var(--bg-color); }
 ::-webkit-scrollbar-thumb { background: var(--surface-hover); border-radius: 4px; }
+
+/* ─── Responsive Media Queries (Mobile & Tablet) ─────────────────────── */
+
+@media (max-width: 992px) {
+  /* Landing page grid collapse */
+  header {
+    padding: 12px 20px !important;
+  }
+
+  header nav {
+    display: none !important;
+  }
+
+  .header-badge {
+    display: none !important;
+  }
+
+  .hero-grid {
+    grid-template-columns: 1fr !important;
+    gap: 36px !important;
+  }
+}
+
+@media (max-width: 768px) {
+  /* Admin Navigation Mobile Drawer & Header */
+  .admin-header-mobile {
+    display: flex !important;
+  }
+
+  .admin-bottom-nav {
+    display: block !important;
+  }
+
+  .admin-sidebar-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.7);
+    backdrop-filter: blur(4px);
+    z-index: 190;
+    display: none;
+  }
+
+  .admin-sidebar-overlay.show {
+    display: block !important;
+  }
+
+  .admin-sidebar {
+    position: fixed !important;
+    top: 0;
+    left: -270px;
+    bottom: 0;
+    z-index: 200;
+    width: 260px !important;
+    min-width: 260px !important;
+    transition: left 0.3s cubic-bezier(0.16, 1, 0.3, 1) !important;
+    box-shadow: 0 0 30px rgba(0,0,0,0.5);
+  }
+
+  .admin-sidebar.open {
+    left: 0 !important;
+  }
+
+  .admin-main {
+    padding: 70px 16px 80px 16px !important;
+    width: 100% !important;
+  }
+
+  /* Form & Table Cards on Mobile */
+  .grid-responsive {
+    grid-template-columns: 1fr !important;
+  }
+
+  /* Modals on Mobile */
+  .glass-panel-modal {
+    max-height: 90vh !important;
+    overflow-y: auto !important;
+  }
+}
+
+@media (max-width: 480px) {
+  /* Extra Mobile Optimizations */
+  body {
+    font-size: 15px;
+  }
+
+  .btn-primary, .btn-secondary, .btn-emerald {
+    padding: 12px 20px !important;
+    font-size: 0.9rem !important;
+  }
+
+  /* Input fields touch target size */
+  .input-field {
+    min-height: 48px;
+    font-size: 16px !important; /* Prevents iOS auto-zoom on inputs */
+  }
+
+  /* Responsive Table Card & Order Rows */
+  .order-row-mobile {
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    gap: 10px !important;
+  }
+}

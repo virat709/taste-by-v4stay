@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useParams } from 'react-router-dom';
 import { doc, collection, onSnapshot, query, orderBy, updateDoc } from 'firebase/firestore';
 import { db } from '../../lib/firebase';
@@ -34,7 +34,7 @@ export default function KitchenDisplay() {
     if (activeOrders.length > prevCount.current && prevCount.current > 0) {
       try {
         audioRef.current?.play();
-      } catch {}
+      } catch { /* ignore audio play error */ }
     }
     prevCount.current = activeOrders.length;
   }, [activeOrders.length]);
@@ -74,7 +74,7 @@ export default function KitchenDisplay() {
           <p style={{ fontSize: '1.1rem' }}>No pending orders. Waiting for the next one...</p>
         </div>
       ) : (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(400px, 1fr))', gap: '20px' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '20px' }}>
           {activeOrders.map(order => (
             <div key={order.id} style={{
               background: order.status === 'pending' ? '#1a0f14' : '#0f141e',

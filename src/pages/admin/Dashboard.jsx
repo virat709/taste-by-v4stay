@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { LayoutDashboard, UtensilsCrossed, Grid2x2, LogOut, Bell, BarChart3, Settings, ExternalLink, MessageSquare, Users, Hotel } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
@@ -171,7 +171,7 @@ export default function Dashboard() {
 
   useEffect(() => {
     if (pendingOrders.length > prevPendingCount.current && prevPendingCount.current > 0) {
-      try { audioRef.current?.play(); } catch {}
+      try { audioRef.current?.play(); } catch { /* ignore audio play error */ }
     }
     prevPendingCount.current = pendingOrders.length;
   }, [pendingOrders.length]);
@@ -298,7 +298,7 @@ function OrderRow({ order, restaurant, currency, onUpdateStatus, onMarkSentToKit
   };
 
   return (
-    <div style={{ padding: '12px 20px', borderBottom: '1px solid var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '16px', flexWrap: 'nowrap', minHeight: '56px' }}>
+    <div className="order-row-mobile" style={{ padding: '12px 20px', borderBottom: '1px solid var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px', flexWrap: 'wrap', minHeight: '56px' }}>
       {/* Left side: Table Number & Items List */}
       <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flex: 1, minWidth: 0 }}>
         {/* Table badge with icon */}

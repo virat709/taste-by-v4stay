@@ -1,4 +1,5 @@
-import React, { createContext, useContext, useEffect, useState } from 'react';
+/* eslint-disable react-refresh/only-export-components */
+import { createContext, useContext, useEffect, useState } from 'react';
 import {
   onAuthStateChanged,
   signInWithEmailAndPassword,
@@ -50,7 +51,6 @@ export function AuthProvider({ children }) {
 }
 
 // Hook colocated with its provider (HMR fast-refresh tradeoff is intentional)
-// eslint-disable-next-line react-refresh/only-export-components
 export function useAuth() {
   return useContext(AuthContext);
 }

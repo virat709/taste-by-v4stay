@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { AdminLayout } from './Dashboard';
 import { useAuth } from '../../context/AuthContext';
 import { db } from '../../lib/firebase';
@@ -25,7 +25,6 @@ export default function TableManager() {
   const baseUrl = window.location.origin;
   const tablesRef = useRef(tables);
 
-  // Keep the ref in sync inside an effect instead of writing it during render
   useEffect(() => {
     tablesRef.current = tables;
   }, [tables]);

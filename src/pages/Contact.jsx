@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, Mail, MessageSquare, Send, CheckCircle } from 'lucide-react';
 import { Helmet } from 'react-helmet-async';
