@@ -13,6 +13,7 @@ import Analytics from './pages/admin/Analytics';
 import Feedback from './pages/admin/Feedback';
 import Settings from './pages/admin/Settings';
 import StaffManagement from './pages/admin/StaffManagement';
+import HotelPartners from './pages/admin/HotelPartners';
 import MenuView from './pages/guest/MenuView';
 import StaffLogin from './pages/staff/StaffLogin';
 import StaffDashboard from './pages/staff/StaffDashboard';
@@ -42,6 +43,7 @@ function AppRoutes() {
       <Route path="/admin/analytics" element={<ProtectedRoute><Analytics /></ProtectedRoute>} />
       <Route path="/admin/feedback" element={<ProtectedRoute><Feedback /></ProtectedRoute>} />
       <Route path="/admin/staff" element={<ProtectedRoute><StaffManagement /></ProtectedRoute>} />
+      <Route path="/admin/hotel-partners" element={<ProtectedRoute><HotelPartners /></ProtectedRoute>} />
       <Route path="/admin/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
       <Route path="/staff" element={<StaffLogin />} />
       <Route path="/staff/:restaurantId" element={<StaffLogin />} />

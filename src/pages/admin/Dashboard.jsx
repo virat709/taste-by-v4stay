@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
-import { LayoutDashboard, UtensilsCrossed, Grid2x2, LogOut, Bell, BarChart3, Settings, ExternalLink, MessageSquare, Users } from 'lucide-react';
+import { LayoutDashboard, UtensilsCrossed, Grid2x2, LogOut, Bell, BarChart3, Settings, ExternalLink, MessageSquare, Users, Hotel } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { doc, onSnapshot, collection, query, orderBy, updateDoc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { db } from '../../lib/firebase';
@@ -23,6 +23,7 @@ export function AdminLayout({ children, restaurantName }) {
     { to: '/admin/analytics', icon: <BarChart3 size={20} />, label: 'Analytics' },
     { to: '/admin/feedback', icon: <MessageSquare size={20} />, label: 'Feedback' },
     { to: '/admin/staff', icon: <Users size={20} />, label: 'Waiters' },
+    { to: '/admin/hotel-partners', icon: <Hotel size={20} />, label: 'Hotel Partners' },
     { to: '/admin/settings', icon: <Settings size={20} />, label: 'Settings' },
   ];
 
@@ -270,9 +271,11 @@ export default function Dashboard() {
 function OrderRow({ order, restaurant, currency, onUpdateStatus, onMarkSentToKitchen }) {
   const statusConfig = {
     pending: { label: 'Pending', color: '#ff9f43', next: 'preparing', nextLabel: 'Start' },
+    confirmed: { label: 'Confirmed', color: '#3b82f6', next: 'preparing', nextLabel: 'Start' },
     preparing: { label: 'Preparing', color: '#1e90ff', next: 'ready', nextLabel: 'Ready' },
     ready: { label: 'Ready', color: '#2ed573', next: 'completed', nextLabel: 'Complete' },
     completed: { label: 'Done', color: '#a4b0be', next: null },
+    delivered: { label: 'Delivered', color: '#10b981', next: null },
     cancelled: { label: 'Cancelled', color: '#ff4757', next: null },
   };
   const cfg = statusConfig[order.status] || statusConfig.pending;
@@ -311,7 +314,7 @@ function OrderRow({ order, restaurant, currency, onUpdateStatus, onMarkSentToKit
           alignItems: 'center',
           gap: '4px'
         }}>
-          🪑 {order.tableNumber || '?'}
+          {order.source === 'hotel' ? `🏨 Room ${order.roomNumber || '?'}` : `🪑 ${order.tableNumber || '?'}`}
         </div>
 
         {/* Inline Items List */}

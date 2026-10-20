@@ -98,7 +98,7 @@ export const printKitchenTicket = (order) => {
       <body>
         <div class="header">
           <div class="kitchen-label">🍳 Kitchen Ticket</div>
-          <div class="table-num">Table ${order.tableNumber}</div>
+          <div class="table-num">${order.source === 'hotel' ? `Room ${order.roomNumber}` : `Table ${order.tableNumber}`}</div>
           <div class="meta">Order #${orderId} &nbsp;|&nbsp; ${time}</div>
         </div>
 
@@ -233,7 +233,7 @@ export const printReceipt = (order, restaurant) => {
           ${restaurant.logoUrl ? `<img src="${restaurant.logoUrl}" alt="Logo" />` : ''}
           <h1>${restaurant.name || 'Restaurant'}</h1>
           ${restaurant.phone ? `<p>Phone: ${restaurant.phone}</p>` : ''}
-          <p>Table: ${order.tableNumber}</p>
+          <p>${order.source === 'hotel' ? `Room: ${order.roomNumber}` : `Table: ${order.tableNumber}`}</p>
         </div>
         
         <div class="details">

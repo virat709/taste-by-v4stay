@@ -28,7 +28,7 @@ export default function KitchenDisplay() {
     });
   }, [restaurantId]);
 
-  const activeOrders = orders.filter(o => o.status === 'pending' || o.status === 'preparing');
+  const activeOrders = orders.filter(o => ['pending', 'confirmed', 'preparing'].includes(o.status));
 
   useEffect(() => {
     if (activeOrders.length > prevCount.current && prevCount.current > 0) {
@@ -86,8 +86,19 @@ export default function KitchenDisplay() {
               {/* Order Header */}
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', paddingBottom: '12px', borderBottom: '1px solid rgba(255,255,255,0.1)' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                  <span style={{ fontSize: '1.5rem', fontWeight: '800' }}>Table {order.tableNumber}</span>
+                  <span style={{ fontSize: '1.5rem', fontWeight: '800', display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                    {order.source === 'hotel' ? (
+                      <>
+                        <span style={{ background: '#f59e0b', color: '#000', fontSize: '0.75rem', padding: '3px 8px', borderRadius: '6px', fontWeight: '900', letterSpacing: '0.5px' }}>HOTEL DELIVERY</span>
+                        <span>Room {order.roomNumber}</span>
+                        {order.hotelName && <span style={{ fontSize: '0.9rem', color: '#9ca3af', fontWeight: '500' }}>({order.hotelName})</span>}
+                      </>
+                    ) : (
+                      `Table ${order.tableNumber}`
+                    )}
+                  </span>
                   {order.status === 'pending' && <span style={{ background: '#ff4757', color: 'white', padding: '4px 12px', borderRadius: '50px', fontSize: '0.9rem', fontWeight: '800' }}>NEW</span>}
+                  {order.status === 'confirmed' && <span style={{ background: '#f59e0b', color: 'white', padding: '4px 12px', borderRadius: '50px', fontSize: '0.9rem', fontWeight: '800' }}>CONFIRMED</span>}
                   {order.status === 'preparing' && <span style={{ background: '#1e90ff', color: 'white', padding: '4px 12px', borderRadius: '50px', fontSize: '0.9rem', fontWeight: '800' }}>PREPARING</span>}
                 </div>
                 <span style={{ color: '#6b7280', fontSize: '0.95rem' }}>
@@ -128,9 +139,14 @@ export default function KitchenDisplay() {
                     Start Preparing
                   </button>
                 )}
+                {order.status === 'confirmed' && (
+                  <button onClick={() => updateStatus(order.id, 'preparing')} style={{ flex: 1, padding: '16px', background: '#1e90ff', border: 'none', borderRadius: '14px', color: 'white', fontWeight: '800', fontSize: '1.1rem', cursor: 'pointer', fontFamily: 'inherit' }}>
+                    Start Preparing
+                  </button>
+                )}
                 {order.status === 'preparing' && (
-                  <button onClick={() => updateStatus(order.id, 'ready')} style={{ flex: 1, padding: '16px', background: '#2ed573', border: 'none', borderRadius: '14px', color: 'white', fontWeight: '800', fontSize: '1.1rem', cursor: 'pointer', fontFamily: 'inherit' }}>
-                    Mark Ready
+                  <button onClick={() => updateStatus(order.id, order.source === 'hotel' ? 'delivered' : 'ready')} style={{ flex: 1, padding: '16px', background: '#2ed573', border: 'none', borderRadius: '14px', color: 'white', fontWeight: '800', fontSize: '1.1rem', cursor: 'pointer', fontFamily: 'inherit' }}>
+                    {order.source === 'hotel' ? `Deliver to Room ${order.roomNumber || ''}` : 'Mark Ready'}
                   </button>
                 )}
               </div>

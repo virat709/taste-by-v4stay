@@ -3,7 +3,8 @@ rules_version = '2';
 // ─────────────────────────────────────────────────────────────────────────────
 // DinePulse — Complete Firestore Security Rules
 // Covers: restaurants, menu (categories/items), tables & QR, orders,
-//         feedback, payments, waiters/staff portal + shift logs
+//         feedback, payments, waiters/staff portal + shift logs,
+//         hotel partners (V4Stay integration key flow)
 //
 // Publish: Firebase Console → Firestore Database → Rules → paste → Publish
 // ─────────────────────────────────────────────────────────────────────────────
@@ -26,6 +27,28 @@ service cloud.firestore {
       // interact — same trust level the guest ordering flow already uses.
       match /orders/{oid} {
         allow read, write: if true;
+      }
+
+      // ── Hotel Partners (V4Stay integration) ────────────────────────────────
+      // Hotel managers create a partnership request ONLY with the restaurant's
+      // current Integration Key. The V4Stay hotel client must include:
+      //   integrationKey: <key pasted by hotel admin>, status: 'pending'
+      // and must READ its request status with a constrained query:
+      //   where('integrationKey', '==', key)
+      // Owner (auth.uid == rid) approves / revokes / deletes.
+      // A hotel can never self-approve: status is forced to 'pending' on create
+      // and updates are owner-only.
+      match /hotelPartners/{partnerId} {
+        allow create: if
+          request.resource.data.status == 'pending' &&
+          request.resource.data.integrationKey ==
+            get(/databases/$(database)/documents/restaurants/$(rid)).data.integrationKey;
+        allow update, delete:
+          if request.auth != null && request.auth.uid == rid;
+        allow read:
+          if request.auth != null && request.auth.uid == rid ||
+             resource.data.integrationKey ==
+               get(/databases/$(database)/documents/restaurants/$(rid)).data.integrationKey;
       }
 
       // ── Menu: categories + nested items ───────────────────────────────────
