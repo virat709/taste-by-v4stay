@@ -1,0 +1,87 @@
+rules_version = '2';
+
+// ─────────────────────────────────────────────────────────────────────────────
+// DinePulse — Complete Firestore Security Rules
+// Covers: restaurants, menu (categories/items), tables & QR, orders,
+//         feedback, payments, waiters/staff portal + shift logs
+//
+// Publish: Firebase Console → Firestore Database → Rules → paste → Publish
+// ─────────────────────────────────────────────────────────────────────────────
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ── Restaurants ────────────────────────────────────────────────────────
+    // Restaurant doc id == owner's Auth uid.
+    // Public read: guests scan QR menu, staff enter restaurant ID.
+    // Only the owner can create/update their restaurant (signup, settings, plan).
+    match /restaurants/{rid} {
+      allow read: if true;
+      allow create, update, delete:
+        if request.auth != null && request.auth.uid == rid;
+
+      // ── Orders ────────────────────────────────────────────────────────────
+      // Guests place orders (no auth), waiters claim them, kitchen updates
+      // status, owner reads analytics. Anyone with the restaurant ID can
+      // interact — same trust level the guest ordering flow already uses.
+      match /orders/{oid} {
+        allow read, write: if true;
+      }
+
+      // ── Menu: categories + nested items ───────────────────────────────────
+      match /categories/{cid} {
+        allow read: if true;
+        allow create, update, delete:
+          if request.auth != null && request.auth.uid == rid;
+
+        match /items/{iid} {
+          allow read: if true;
+          allow create, update, delete:
+            if request.auth != null && request.auth.uid == rid;
+        }
+      }
+
+      // ── Tables & QR codes ─────────────────────────────────────────────────
+      match /tables/{tid} {
+        allow read: if true;
+        allow create, update, delete:
+          if request.auth != null && request.auth.uid == rid;
+      }
+
+      // ── Waiters / Staff portal ────────────────────────────────────────────
+      // read     : waiter portal loads the waiter list (to pick own name)
+      // create   : only the owner (manager adds waiters)
+      // delete   : only the owner (manager removes waiters)
+      // update   : waiter device (clock in/out, 30s heartbeat, pickup counter)
+      match /staff/{sid} {
+        allow read: if true;
+        allow create, delete:
+          if request.auth != null && request.auth.uid == rid;
+        allow update: if true;
+
+        // ── Shift logs (manager-maintained duty records) ────────────────────
+        // One doc per duty shift: startedAt, endedAt, onlineSeconds,
+        // ordersPicked. Waiter device creates/ends its own shift; manager
+        // may close shifts that were never clocked out.
+        match /shifts/{shiftId} {
+          allow read, write: if true;
+        }
+      }
+
+      // ── Feedback ──────────────────────────────────────────────────────────
+      // Guests submit; only the owner reads the ratings.
+      match /feedback/{fid} {
+        allow create: if true;
+        allow read: if request.auth != null && request.auth.uid == rid;
+        allow update, delete:
+          if request.auth != null && request.auth.uid == rid;
+      }
+
+      // ── Payments (plan upgrades) ──────────────────────────────────────────
+      match /payments/{pid} {
+        allow read, write:
+          if request.auth != null && request.auth.uid == rid;
+      }
+    }
+  }
+}

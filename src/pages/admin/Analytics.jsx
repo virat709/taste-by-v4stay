@@ -30,7 +30,7 @@ export default function Analytics() {
     return onSnapshot(doc(db, 'restaurants', user.uid), snap => {
       if (snap.exists()) {
         setRestaurant(snap.data());
-        if (!planChecked) setPlanChecked(true);
+        setPlanChecked(true);
       }
     });
   }, [user]);

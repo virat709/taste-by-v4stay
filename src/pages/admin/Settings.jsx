@@ -4,7 +4,7 @@ import { AdminLayout } from './Dashboard';
 import { useAuth } from '../../context/AuthContext';
 import { db } from '../../lib/firebase';
 import { doc, getDoc, updateDoc, collection, addDoc, serverTimestamp, onSnapshot, query, orderBy } from 'firebase/firestore';
-import { Save, Settings as SettingsIcon, Crown, CheckCircle, Copy, Check, Smartphone, ArrowRight, CreditCard, Shield } from 'lucide-react';
+import { Save, Settings as SettingsIcon, Crown, CheckCircle, Copy, Check, Smartphone, CreditCard, Shield } from 'lucide-react';
 import { getEffectivePlan, getTrialDaysRemaining, PLAN_LABELS, PLAN_FEATURES, PROVIDER_UPI_ID, PREMIUM_PRICE, PREMIUM_PRICE_LABEL } from '../../lib/subscription';
 import { initializeRazorpayPayment } from '../../lib/razorpay';
 

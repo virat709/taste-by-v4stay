@@ -17,5 +17,11 @@ export default defineConfig([
       globals: globals.browser,
       parserOptions: { ecmaFeatures: { jsx: true } },
     },
+    rules: {
+      // Project idiom: React 19 always imports React (new JSX transform)
+      'no-unused-vars': ['error', { varsIgnorePattern: '^React$', argsIgnorePattern: '^_' }],
+      // Deliberate silent catches (audio autoplay, best-effort presence writes)
+      'no-empty': ['error', { allowEmptyCatch: true }],
+    },
   },
 ])

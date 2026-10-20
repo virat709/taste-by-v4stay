@@ -29,7 +29,6 @@ export default function KitchenDisplay() {
   }, [restaurantId]);
 
   const activeOrders = orders.filter(o => o.status === 'pending' || o.status === 'preparing');
-  const currency = restaurant?.currency || '₹';
 
   useEffect(() => {
     if (activeOrders.length > prevCount.current && prevCount.current > 0) {

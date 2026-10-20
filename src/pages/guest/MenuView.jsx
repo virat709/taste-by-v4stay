@@ -5,7 +5,7 @@ import {
   doc, collection, onSnapshot, addDoc, serverTimestamp,
   query, orderBy, getDoc
 } from 'firebase/firestore';
-import { ShoppingCart, X, Plus, Minus, ChefHat, Check, AlertCircle, MessageSquare, Star, Crown, CreditCard, Smartphone } from 'lucide-react';
+import { X, Plus, Minus, ChefHat, Check, AlertCircle, Star, Crown, CreditCard, Smartphone } from 'lucide-react';
 import { canPlaceOrders } from '../../lib/subscription';
 import { initializeRazorpayPayment, DEFAULT_RAZORPAY_KEY } from '../../lib/razorpay';
 

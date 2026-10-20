@@ -1,11 +1,11 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
-import { LayoutDashboard, UtensilsCrossed, Grid2x2, LogOut, Bell, BarChart3, Settings, ExternalLink, MessageSquare } from 'lucide-react';
+import { LayoutDashboard, UtensilsCrossed, Grid2x2, LogOut, Bell, BarChart3, Settings, ExternalLink, MessageSquare, Users } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { doc, onSnapshot, collection, query, orderBy, updateDoc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { db } from '../../lib/firebase';
 import { printReceipt, printKitchenTicket } from '../../components/ReceiptTemplate';
-import { getEffectivePlan, getTrialDaysRemaining, PLAN_LABELS } from '../../lib/subscription';
+import { getEffectivePlan } from '../../lib/subscription';
 
 // ─── Shared Layout ─────────────────────────────────────────────────────────────
 export function AdminLayout({ children, restaurantName }) {
@@ -22,6 +22,7 @@ export function AdminLayout({ children, restaurantName }) {
     { to: '/admin/tables', icon: <Grid2x2 size={20} />, label: 'Tables & QR' },
     { to: '/admin/analytics', icon: <BarChart3 size={20} />, label: 'Analytics' },
     { to: '/admin/feedback', icon: <MessageSquare size={20} />, label: 'Feedback' },
+    { to: '/admin/staff', icon: <Users size={20} />, label: 'Waiters' },
     { to: '/admin/settings', icon: <Settings size={20} />, label: 'Settings' },
   ];
 
@@ -263,16 +264,6 @@ export default function Dashboard() {
         </div>
       </div>
     </AdminLayout>
-  );
-}
-
-function StatCard({ label, value, sub, color }) {
-  return (
-    <div style={{ background: 'var(--surface)', borderRadius: '18px', padding: '22px 24px', border: '1px solid var(--border)', borderLeft: `4px solid ${color}` }}>
-      <p style={{ color: 'var(--text-muted)', fontSize: '0.8rem', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '10px' }}>{label}</p>
-      <p style={{ fontSize: '2.2rem', fontWeight: '800', marginBottom: '8px', lineHeight: 1 }}>{value}</p>
-      <span style={{ background: `${color}18`, color, borderRadius: '50px', padding: '3px 10px', fontSize: '0.76rem', fontWeight: '700' }}>{sub}</span>
-    </div>
   );
 }
 

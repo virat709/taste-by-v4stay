@@ -5,7 +5,7 @@ import { db } from '../lib/firebase';
 import { Mail, Lock, User, ArrowRight, Eye, EyeOff } from 'lucide-react';
 
 export default function AuthPage() {
-  const [mode, setMode] = useState('login');
+  const [mode] = useState('login');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [restaurantName, setRestaurantName] = useState('');

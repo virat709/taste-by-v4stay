@@ -24,7 +24,11 @@ export default function TableManager() {
   const [selectedTheme, setSelectedTheme] = useState(THEMES[0]);
   const baseUrl = window.location.origin;
   const tablesRef = useRef(tables);
-  tablesRef.current = tables;
+
+  // Keep the ref in sync inside an effect instead of writing it during render
+  useEffect(() => {
+    tablesRef.current = tables;
+  }, [tables]);
 
   useEffect(() => {
     if (!user) return;
@@ -163,7 +167,7 @@ export default function TableManager() {
   );
 }
 
-function TableCard({ table, userId, baseUrl, restaurantName, theme, onDelete }) {
+function TableCard({ table, userId, baseUrl, restaurantName: _restaurantName, theme: _theme, onDelete }) {
   const qrUrl = `${baseUrl}/menu/${userId}/${table.number}`;
   const svgRef = useRef(null);
   const [copied, setCopied] = useState(false);

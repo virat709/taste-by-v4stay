@@ -12,6 +12,7 @@ import TableManager from './pages/admin/TableManager';
 import Analytics from './pages/admin/Analytics';
 import Feedback from './pages/admin/Feedback';
 import Settings from './pages/admin/Settings';
+import StaffManagement from './pages/admin/StaffManagement';
 import MenuView from './pages/guest/MenuView';
 import StaffLogin from './pages/staff/StaffLogin';
 import StaffDashboard from './pages/staff/StaffDashboard';
@@ -40,8 +41,10 @@ function AppRoutes() {
       <Route path="/admin/tables" element={<ProtectedRoute><TableManager /></ProtectedRoute>} />
       <Route path="/admin/analytics" element={<ProtectedRoute><Analytics /></ProtectedRoute>} />
       <Route path="/admin/feedback" element={<ProtectedRoute><Feedback /></ProtectedRoute>} />
+      <Route path="/admin/staff" element={<ProtectedRoute><StaffManagement /></ProtectedRoute>} />
       <Route path="/admin/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
       <Route path="/staff" element={<StaffLogin />} />
+      <Route path="/staff/:restaurantId" element={<StaffLogin />} />
       <Route path="/staff/dashboard" element={<StaffDashboard />} />
       <Route path="/kitchen/:restaurantId" element={<KitchenDisplay />} />
       <Route path="/menu/:restaurantId/:tableNumber" element={<MenuView />} />
