@@ -38,7 +38,7 @@ export default function Contact() {
       <Helmet>
         <title>Contact Us | DinePulse</title>
         <meta name="description" content="Get in touch with the DinePulse team. We're here to help you set up your smart restaurant automation." />
-        <link rel="canonical" href="https://dinepulse.com/contact" />
+        <link rel="canonical" href="https://taste.v4stay.com/contact" />
       </Helmet>
       <header style={{ padding: '14px 40px', display: 'flex', alignItems: 'center', gap: '12px', background: 'var(--surface)', borderBottom: '1px solid var(--border)' }}>
         <button onClick={() => navigate(-1)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)', padding: '4px', display: 'flex' }}>

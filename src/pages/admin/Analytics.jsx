@@ -8,6 +8,13 @@ import { AreaChart, Area, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, R
 import { Crown, Lock } from 'lucide-react';
 import { getEffectivePlan } from '../../lib/subscription';
 
+// Orders may originate from the V4Stay hotel integration where totals can be
+// strings — coerce so .toFixed()/arithmetics never crash on chart data.
+const toNum = (v) => {
+  const n = Number(v);
+  return Number.isFinite(n) ? n : 0;
+};
+
 export default function Analytics() {
   const { user } = useAuth();
   const navigate = useNavigate();
@@ -67,21 +74,21 @@ export default function Analytics() {
       }
 
       if (!groups[key]) groups[key] = { name: key, revenue: 0, orders: 0 };
-      groups[key].revenue += (o.total || 0);
+      groups[key].revenue += (o.status === 'cancelled' ? 0 : toNum(o.total));
       groups[key].orders += 1;
 
       // Items
       o.items?.forEach(i => {
         if (!itemsMap[i.name]) itemsMap[i.name] = { name: i.name, qty: 0, revenue: 0 };
-        itemsMap[i.name].qty += i.qty;
-        itemsMap[i.name].revenue += (i.price * i.qty);
+        itemsMap[i.name].qty += toNum(i.qty);
+        itemsMap[i.name].revenue += (toNum(i.price) * toNum(i.qty));
       });
     });
 
     return {
       chartData: Object.values(groups),
       topItems: Object.values(itemsMap).sort((a,b) => b.qty - a.qty).slice(0, 5),
-      totalRev: filtered.reduce((s, o) => s + (o.total || 0), 0),
+      totalRev: filtered.reduce((s, o) => s + (o.status === 'cancelled' ? 0 : toNum(o.total)), 0),
       totalOrd: filtered.length
     };
   }, [orders, timeframe]);

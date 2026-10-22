@@ -268,6 +268,23 @@ h1, h2, h3, h4 {
 
 .animate-float { animation: floatSlow 6s ease-in-out infinite; }
 
+/* Loader spinner (guest menu, staff portal) */
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* Live/pulse dot indicators (order alerts, online status) */
+@keyframes pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.35; transform: scale(0.85); }
+}
+
+/* Modal / panel entrance animation */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.animate-fade-in { animation: fadeIn 0.25s ease-out; }
+
 ::-webkit-scrollbar { width: 8px; }
 ::-webkit-scrollbar-track { background: var(--bg-color); }
 ::-webkit-scrollbar-thumb { background: var(--surface-hover); border-radius: 4px; }

@@ -111,6 +111,17 @@ export default function MenuView() {
     });
   };
 
+  // Menu cards only know the item id — decrement whichever cart entry
+  // (including modifier variants) belongs to that item.
+  const removeFromCartById = (id) => {
+    setCart(prev => {
+      const idx = prev.findIndex(i => i.id === id);
+      if (idx === -1) return prev;
+      if (prev[idx].qty <= 1) return prev.filter(i => i !== prev[idx]);
+      return prev.map((i, index) => index === idx ? { ...i, qty: i.qty - 1 } : i);
+    });
+  };
+
   const getQty = (id) => cart.reduce((s, i) => s + (i.id === id ? i.qty : 0), 0);
 
   const toastTimeout = useRef(null);
@@ -361,7 +372,7 @@ export default function MenuView() {
                         addToCart(item);
                       }
                     }}
-                    onRemove={() => removeFromCart(item.id)}
+                    onRemove={() => removeFromCartById(item.id)}
                   />
                 ))}
               </div>

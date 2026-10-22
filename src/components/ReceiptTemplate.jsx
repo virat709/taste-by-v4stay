@@ -146,8 +146,9 @@ export const printKitchenTicket = (order) => {
 export const printReceipt = (order, restaurant) => {
   const currency = restaurant?.currency || '₹';
   const taxRate = restaurant?.taxRate || 0;
-  const taxAmount = order.taxAmount || 0;
-  const subtotal = order.subtotal ?? order.total - taxAmount; // Fallback for older orders
+  const taxAmount = Number(order.taxAmount) || 0;
+  const subtotal = (order.subtotal != null ? Number(order.subtotal) : Number(order.total) - taxAmount) || 0; // Fallback for older orders
+  const total = Number(order.total) || 0;
   const time = order.createdAt?.toDate?.()?.toLocaleString() || new Date().toLocaleString();
 
   const printWindow = window.open('', '_blank', 'width=400,height=600');
@@ -230,7 +231,7 @@ export const printReceipt = (order, restaurant) => {
       </head>
       <body>
         <div class="header">
-          ${restaurant.logoUrl ? `<img src="${restaurant.logoUrl}" alt="Logo" />` : ''}
+          ${restaurant.logo ? `<img src="${restaurant.logo}" alt="Logo" />` : ''}
           <h1>${restaurant.name || 'Restaurant'}</h1>
           ${restaurant.phone ? `<p>Phone: ${restaurant.phone}</p>` : ''}
           <p>${order.source === 'hotel' ? `Room: ${order.roomNumber}` : `Table: ${order.tableNumber}`}</p>
@@ -255,7 +256,7 @@ export const printReceipt = (order, restaurant) => {
               <tr>
                 <td>${item.qty}x</td>
                 <td>${item.name}${item.modifiers?.length > 0 ? ' (' + item.modifiers.map(m => m.optionName).join(', ') + ')' : ''}</td>
-                <td class="right">${currency}${(item.price * item.qty).toFixed(2)}</td>
+                <td class="right">${currency}${(Number(item.price || 0) * Number(item.qty || 0)).toFixed(2)}</td>
               </tr>
             `).join('')}
           </tbody>
@@ -276,7 +277,7 @@ export const printReceipt = (order, restaurant) => {
           ` : ''}
           <div class="grand-total">
             <span>Total</span>
-            <span>${currency}${(order.total || 0).toFixed(2)}</span>
+            <span>${currency}${total.toFixed(2)}</span>
           </div>
         </div>
 

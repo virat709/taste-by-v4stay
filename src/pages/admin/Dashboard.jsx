@@ -2,10 +2,17 @@ import { useEffect, useState, useRef } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { LayoutDashboard, UtensilsCrossed, Grid2x2, LogOut, Bell, BarChart3, Settings, ExternalLink, MessageSquare, Users, Hotel } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
-import { doc, onSnapshot, collection, query, orderBy, updateDoc, setDoc, serverTimestamp } from 'firebase/firestore';
+import { doc, onSnapshot, collection, query, orderBy, updateDoc, setDoc, serverTimestamp, Timestamp } from 'firebase/firestore';
 import { db } from '../../lib/firebase';
 import { printReceipt, printKitchenTicket } from '../../components/ReceiptTemplate';
-import { getEffectivePlan } from '../../lib/subscription';
+import { getEffectivePlan, getTrialDaysRemaining } from '../../lib/subscription';
+
+// Numeric coercion helper — orders can come from external sources (V4Stay hotel
+// integration) where totals may arrive as strings; toFixed/arithmetics crash otherwise.
+const toNum = (v) => {
+  const n = Number(v);
+  return Number.isFinite(n) ? n : 0;
+};
 
 // ─── Shared Layout ─────────────────────────────────────────────────────────────
 export function AdminLayout({ children, restaurantName }) {
@@ -130,11 +137,18 @@ export default function Dashboard() {
         if (snap.exists()) {
           setRestaurant(snap.data());
         } else {
+          // Auto-provision (Google sign-up users never run the email signup flow).
+          // Include a 14-day trial so ordering is NOT locked on the Free plan.
+          const trialEnd = new Date(Date.now() + 14 * 24 * 60 * 60 * 1000);
           const defaultData = {
             ownerId: user.uid,
-            name: 'My Restaurant',
+            email: user.email || '',
+            name: user.displayName || 'My Restaurant',
             currency: '₹',
             taxRate: 0,
+            plan: 'trial',
+            trialStartedAt: serverTimestamp(),
+            trialEndsAt: Timestamp.fromDate(trialEnd),
             createdAt: serverTimestamp()
           };
           setDoc(doc(db, 'restaurants', user.uid), defaultData).catch(() => {});
@@ -166,7 +180,8 @@ export default function Dashboard() {
     const d = o.createdAt?.toDate?.();
     return d && d.toDateString() === new Date().toDateString();
   });
-  const todayRevenue = todayOrders.reduce((s, o) => s + (o.total || 0), 0);
+  // Cancelled orders must not count towards revenue
+  const todayRevenue = todayOrders.reduce((s, o) => s + (o.status === 'cancelled' ? 0 : toNum(o.total)), 0);
   const pendingOrders = orders.filter(o => o.status === 'pending');
 
   useEffect(() => {
@@ -199,20 +214,25 @@ export default function Dashboard() {
           {restaurant && (() => {
             const effective = getEffectivePlan(restaurant);
             if (effective === 'paid') return null;
+            const isTrial = effective === 'trial';
+            const daysLeft = getTrialDaysRemaining(restaurant);
+            const label = isTrial
+              ? `Free Trial — ${daysLeft} day${daysLeft === 1 ? '' : 's'} left`
+              : 'Trial Expired — Upgrade';
             return (
               <span style={{ 
                 fontSize: '0.72rem', 
                 fontWeight: '700', 
-                background: 'rgba(255,71,87,0.08)', 
-                color: '#ff4757', 
+                background: isTrial ? 'rgba(245,158,11,0.08)' : 'rgba(255,71,87,0.08)', 
+                color: isTrial ? '#f59e0b' : '#ff4757', 
                 padding: '3px 8px', 
                 borderRadius: '6px', 
-                border: '1px solid rgba(255,71,87,0.12)',
+                border: `1px solid ${isTrial ? 'rgba(245,158,11,0.15)' : 'rgba(255,71,87,0.12)'}`,
                 display: 'inline-flex',
                 alignItems: 'center',
                 cursor: 'pointer'
               }} onClick={() => navigate('/admin/settings')}>
-                Trial Expired — Upgrade
+                {label}
               </span>
             );
           })()}
@@ -269,15 +289,26 @@ export default function Dashboard() {
 }
 
 function OrderRow({ order, restaurant, currency, onUpdateStatus, onMarkSentToKitchen }) {
-  const statusConfig = {
-    pending: { label: 'Pending', color: '#ff9f43', next: 'preparing', nextLabel: 'Start' },
-    confirmed: { label: 'Confirmed', color: '#3b82f6', next: 'preparing', nextLabel: 'Start' },
-    preparing: { label: 'Preparing', color: '#1e90ff', next: 'ready', nextLabel: 'Ready' },
-    ready: { label: 'Ready', color: '#2ed573', next: 'completed', nextLabel: 'Complete' },
-    completed: { label: 'Done', color: '#a4b0be', next: null },
-    delivered: { label: 'Delivered', color: '#10b981', next: null },
-    cancelled: { label: 'Cancelled', color: '#ff4757', next: null },
-  };
+  // Hotel orders (V4Stay): the restaurant side ends at "ready" — the hotel
+  // staff delivers to the room and V4Stay writes the final 'delivered' status.
+  const statusConfig = order.source === 'hotel'
+    ? {
+        pending: { label: 'Pending', color: '#ff9f43', next: 'confirmed', nextLabel: 'Confirm' },
+        confirmed: { label: 'Confirmed', color: '#3b82f6', next: 'preparing', nextLabel: 'Start' },
+        preparing: { label: 'Preparing', color: '#1e90ff', next: 'ready', nextLabel: 'Ready' },
+        ready: { label: 'Ready', color: '#2ed573', next: null },
+        delivered: { label: 'Delivered', color: '#10b981', next: null },
+        cancelled: { label: 'Cancelled', color: '#ff4757', next: null },
+      }
+    : {
+        pending: { label: 'Pending', color: '#ff9f43', next: 'preparing', nextLabel: 'Start' },
+        confirmed: { label: 'Confirmed', color: '#3b82f6', next: 'preparing', nextLabel: 'Start' },
+        preparing: { label: 'Preparing', color: '#1e90ff', next: 'ready', nextLabel: 'Ready' },
+        ready: { label: 'Ready', color: '#2ed573', next: 'completed', nextLabel: 'Complete' },
+        completed: { label: 'Done', color: '#a4b0be', next: null },
+        delivered: { label: 'Delivered', color: '#10b981', next: null },
+        cancelled: { label: 'Cancelled', color: '#ff4757', next: null },
+      };
   const cfg = statusConfig[order.status] || statusConfig.pending;
   const time = order.createdAt?.toDate?.()?.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 
@@ -333,13 +364,18 @@ function OrderRow({ order, restaurant, currency, onUpdateStatus, onMarkSentToKit
               📝 {order.instructions}
             </div>
           )}
+          {order.source === 'hotel' && ['preparing', 'ready'].includes(order.status) && (
+            <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)', fontWeight: '600', marginTop: '2px' }}>
+              🛵 Hotel staff delivers — they mark it Delivered
+            </div>
+          )}
         </div>
       </div>
 
       {/* Right side: Price, Status & Actions */}
       <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexShrink: 0 }}>
         <span style={{ fontWeight: '800', fontSize: '0.98rem', minWidth: '70px', textAlign: 'right' }}>
-          {currency}{(order.total || 0).toFixed(0)}
+          {currency}{toNum(order.total).toFixed(0)}
         </span>
         
         <span style={{ 

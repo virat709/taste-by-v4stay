@@ -16,6 +16,12 @@ function genKey(uid) {
   return `DP-${uid.slice(0, 6).toUpperCase()}-${rand}`;
 }
 
+// Hotel orders arrive from the V4Stay integration — amounts may be strings.
+function toNum(v) {
+  const n = Number(v);
+  return Number.isFinite(n) ? n : 0;
+}
+
 function StatusBadge({ status }) {
   const map = {
     pending:  { color: '#f59e0b', bg: 'rgba(245,158,11,0.12)', label: 'Pending',  icon: <Clock size={11} /> },
@@ -307,6 +313,7 @@ export default function HotelPartners() {
                   pending:   { color: '#f59e0b', bg: 'rgba(245,158,11,0.1)' },
                   confirmed: { color: '#3b82f6', bg: 'rgba(59,130,246,0.1)' },
                   preparing: { color: '#8b5cf6', bg: 'rgba(139,92,246,0.1)' },
+                  ready:     { color: '#2ed573', bg: 'rgba(46,213,115,0.1)' },
                   delivered: { color: '#10b981', bg: 'rgba(16,185,129,0.1)' },
                   cancelled: { color: '#ef4444', bg: 'rgba(239,68,68,0.1)' },
                 })[o.status] || { color: '#f59e0b', bg: 'rgba(245,158,11,0.1)' };
@@ -318,7 +325,7 @@ export default function HotelPartners() {
                       <div>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px', flexWrap: 'wrap' }}>
                           <span style={{ fontWeight: '800', fontSize: '0.95rem' }}>
-                            🏨 Room {o.roomNumber} — {o.hotelName || 'Hotel'}
+                            🏨 Room {o.roomNumber || '—'} — {o.hotelName || 'Hotel'}
                           </span>
                           <span style={{ fontSize: '0.7rem', fontWeight: '700', color: '#818cf8',
                             background: 'rgba(129,140,248,0.1)', padding: '2px 8px', borderRadius: '20px',
@@ -327,7 +334,7 @@ export default function HotelPartners() {
                           </span>
                         </div>
                         <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
-                          Guest: <strong>{o.guestName}</strong>&nbsp;·&nbsp;
+                          Guest: <strong>{o.guestName || '—'}</strong>&nbsp;·&nbsp;
                           {o.createdAt?.toDate
                             ? new Date(o.createdAt.toDate()).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' })
                             : ''}
@@ -343,17 +350,17 @@ export default function HotelPartners() {
                       {(o.items || []).map((item, idx) => (
                         <div key={idx} style={{ display: 'flex', justifyContent: 'space-between',
                           fontSize: '0.85rem', padding: '5px 0', borderBottom: '1px solid var(--border)' }}>
-                          <span>{item.name} <span style={{ color: 'var(--text-muted)' }}>×{item.qty}</span></span>
-                          <span style={{ fontWeight: '700' }}>{currency}{(parseFloat(item.price || 0) * item.qty).toFixed(0)}</span>
+                          <span>{item.name} <span style={{ color: 'var(--text-muted)' }}>×{toNum(item.qty)}</span></span>
+                          <span style={{ fontWeight: '700' }}>{currency}{(toNum(item.price) * toNum(item.qty)).toFixed(0)}</span>
                         </div>
                       ))}
                       <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '8px',
                         fontWeight: '800', fontSize: '0.95rem' }}>
                         <span>Total</span>
-                        <span style={{ color: '#f59e0b' }}>{currency}{o.total || '—'}</span>
+                        <span style={{ color: '#f59e0b' }}>{o.total != null ? `${currency}${toNum(o.total).toFixed(0)}` : '—'}</span>
                       </div>
                     </div>
-                    <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                    <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', alignItems: 'center' }}>
                       {o.status === 'pending' && (
                         <button onClick={() => updateOrderStatus(o.id, 'confirmed')} className="btn-primary"
                           style={{ padding: '8px 18px', fontSize: '0.82rem' }}>
@@ -368,11 +375,25 @@ export default function HotelPartners() {
                         </button>
                       )}
                       {o.status === 'preparing' && (
-                        <button onClick={() => updateOrderStatus(o.id, 'delivered')} className="btn-primary"
+                        <button onClick={() => updateOrderStatus(o.id, 'ready')} className="btn-primary"
                           style={{ padding: '8px 18px', fontSize: '0.82rem',
                             background: 'linear-gradient(135deg,#059669,#10b981)', color: 'white' }}>
-                          🛵 Mark Delivered to Room {o.roomNumber}
+                          ✅ Food Ready for Hotel Pickup
                         </button>
+                      )}
+                      {o.status === 'ready' && (
+                        <span style={{ fontSize: '0.8rem', color: '#2ed573', fontWeight: '700',
+                          background: 'rgba(46,213,115,0.08)', border: '1px solid rgba(46,213,115,0.25)',
+                          padding: '7px 14px', borderRadius: '10px', display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+                          🛵 Waiting — the hotel staff delivers to Room {o.roomNumber || '—'} and marks it Delivered
+                        </span>
+                      )}
+                      {o.status === 'delivered' && (
+                        <span style={{ fontSize: '0.8rem', color: '#10b981', fontWeight: '700',
+                          background: 'rgba(16,185,129,0.08)', border: '1px solid rgba(16,185,129,0.25)',
+                          padding: '7px 14px', borderRadius: '10px', display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+                          🏨 Delivered by hotel
+                        </span>
                       )}
                       {!['delivered', 'cancelled'].includes(o.status) && (
                         <button onClick={() => updateOrderStatus(o.id, 'cancelled')} className="btn-secondary"

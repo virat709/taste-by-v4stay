@@ -23,6 +23,9 @@ export default function Settings() {
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState('');
+  // Full restaurant record (incl. plan fields) — formData only holds editable fields,
+  // so plan checks must NOT read formData (it would always evaluate as 'free').
+  const [planRecord, setPlanRecord] = useState(null);
   const [paymentRequests, setPaymentRequests] = useState([]);
   const [showPaymentForm, setShowPaymentForm] = useState(false);
   const [utrNumber, setUtrNumber] = useState('');
@@ -47,6 +50,7 @@ export default function Settings() {
             razorpayKeyId: data.razorpayKeyId || '',
             staffPin: data.staffPin || ''
           });
+          setPlanRecord({ plan: data.plan, trialEndsAt: data.trialEndsAt });
         }
       } catch (err) {
         console.error('Failed to load settings:', err);
@@ -173,6 +177,8 @@ export default function Settings() {
     }
   };
 
+  const effectivePlan = getEffectivePlan(planRecord || {});
+
   return (
     <AdminLayout>
       <div style={{ marginBottom: '28px' }}>
@@ -198,29 +204,29 @@ export default function Settings() {
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '12px' }}>
               <div>
                 <h2 style={{ fontSize: '1.2rem', fontWeight: '700', marginBottom: '4px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  <Crown size={18} color={getEffectivePlan(formData) === 'free' ? 'var(--text-muted)' : '#f59e0b'} /> Subscription Plan
+                  <Crown size={18} color={effectivePlan === 'free' ? 'var(--text-muted)' : '#f59e0b'} /> Subscription Plan
                 </h2>
                 <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginBottom: '16px' }}>
-                  {getEffectivePlan(formData) === 'paid'
+                  {effectivePlan === 'paid'
                     ? 'You\'re on the Premium plan. All features are unlocked.'
-                    : getEffectivePlan(formData) === 'trial'
+                    : effectivePlan === 'trial'
                       ? `You're on a free trial (${getTrialDaysRemaining(formData)} days remaining).`
                       : 'Your trial has ended. Upgrade to unlock all features.'}
                 </p>
               </div>
-              <span style={{ padding: '6px 14px', borderRadius: '50px', fontSize: '0.82rem', fontWeight: '800', background: getEffectivePlan(formData) === 'paid' ? 'rgba(20,184,166,0.15)' : getEffectivePlan(formData) === 'trial' ? 'rgba(245,158,11,0.15)' : 'rgba(164,176,190,0.15)', color: getEffectivePlan(formData) === 'paid' ? '#14b8a6' : getEffectivePlan(formData) === 'trial' ? '#f59e0b' : 'var(--text-muted)' }}>
-                {PLAN_LABELS[getEffectivePlan(formData)]?.label || 'Free'}
+              <span style={{ padding: '6px 14px', borderRadius: '50px', fontSize: '0.82rem', fontWeight: '800', background: effectivePlan === 'paid' ? 'rgba(20,184,166,0.15)' : effectivePlan === 'trial' ? 'rgba(245,158,11,0.15)' : 'rgba(164,176,190,0.15)', color: effectivePlan === 'paid' ? '#14b8a6' : effectivePlan === 'trial' ? '#f59e0b' : 'var(--text-muted)' }}>
+                {PLAN_LABELS[effectivePlan]?.label || 'Free'}
               </span>
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '20px' }}>
-              {(PLAN_FEATURES[getEffectivePlan(formData)] || []).map(f => (
+              {(PLAN_FEATURES[effectivePlan] || []).map(f => (
                 <div key={f} style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.9rem', color: 'var(--text-muted)' }}>
                   <CheckCircle size={15} color="#14b8a6" /> {f}
                 </div>
               ))}
             </div>
 
-            {getEffectivePlan(formData) !== 'paid' && (
+            {effectivePlan !== 'paid' && (
               <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                 <button type="button" onClick={handleRazorpayUpgrade} disabled={submittingPayment}
                   style={{ padding: '14px 28px', background: 'linear-gradient(135deg, #d97706, #f59e0b)', border: 'none', borderRadius: '14px', color: '#060709', fontWeight: '800', fontSize: '0.95rem', cursor: 'pointer', fontFamily: 'inherit', boxShadow: '0 6px 20px rgba(245,158,11,0.35)', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>

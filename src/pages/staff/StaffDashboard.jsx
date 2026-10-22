@@ -160,7 +160,11 @@ export default function StaffDashboard() {
     const q = query(collection(db, 'restaurants', session.restaurantId, 'orders'), orderBy('createdAt', 'desc'));
     const unsubOrders = onSnapshot(q, snap => {
       const today = new Date().toDateString();
-      const allOrders = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+      // Hotel (V4Stay) room orders are delivered by hotel staff — they follow
+      // their own flow (Admin → Hotel Partners) and are NOT claimable by waiters.
+      const allOrders = snap.docs
+        .map(d => ({ id: d.id, ...d.data() }))
+        .filter(o => o.source !== 'hotel');
       const todayOrders = allOrders.filter(o => {
         const d = o.createdAt?.toDate?.();
         return d && d.toDateString() === today;
@@ -400,9 +404,11 @@ export default function StaffDashboard() {
 function StaffOrderCard({ order, isMine, onUpdateStatus, onPickUp, onMarkSentToKitchen }) {
   const statusConfig = {
     pending: { label: 'Pending', color: '#ff9f43', next: 'preparing', nextLabel: 'Start' },
+    confirmed: { label: 'Confirmed', color: '#3b82f6', next: 'preparing', nextLabel: 'Start' },
     preparing: { label: 'Preparing', color: '#1e90ff', next: 'ready', nextLabel: 'Ready' },
     ready: { label: 'Ready', color: '#2ed573', next: 'completed', nextLabel: 'Serve' },
     completed: { label: 'Done', color: '#a4b0be', next: null },
+    delivered: { label: 'Delivered', color: '#10b981', next: null },
     cancelled: { label: 'Cancelled', color: '#ff4757', next: null },
   };
   const cfg = statusConfig[order.status] || statusConfig.pending;
@@ -431,7 +437,7 @@ function StaffOrderCard({ order, isMine, onUpdateStatus, onPickUp, onMarkSentToK
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '16px', flexWrap: 'wrap' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flex: 1, minWidth: 0 }}>
             <div style={{ background: 'rgba(255,71,87,0.08)', color: 'var(--primary)', padding: '5px 10px', borderRadius: '8px', fontSize: '0.88rem', fontWeight: '800', whiteSpace: 'nowrap' }}>
-              🪑 {order.tableNumber || '?'}
+              {order.source === 'hotel' ? `🏨 Room ${order.roomNumber || '?'}` : `🪑 ${order.tableNumber || '?'}`}
             </div>
             <div style={{ flex: 1, minWidth: 0 }}>
               <div style={{ fontSize: '0.94rem', fontWeight: '500', color: 'var(--text-main)', textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap' }}>
@@ -475,7 +481,7 @@ function StaffOrderCard({ order, isMine, onUpdateStatus, onPickUp, onMarkSentToK
     return (
       <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: '16px', padding: '14px 20px', display: 'flex', alignItems: 'center', gap: '14px', opacity: 0.75 }}>
         <div style={{ background: 'rgba(30,144,255,0.08)', color: '#1e90ff', padding: '5px 10px', borderRadius: '8px', fontSize: '0.88rem', fontWeight: '800', whiteSpace: 'nowrap' }}>
-          🪑 {order.tableNumber || '?'}
+          {order.source === 'hotel' ? `🏨 Room ${order.roomNumber || '?'}` : `🪑 ${order.tableNumber || '?'}`}
         </div>
         <div style={{ flex: 1, minWidth: 0 }}>
           <div style={{ fontSize: '0.94rem', color: 'var(--text-muted)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
@@ -501,7 +507,7 @@ function StaffOrderCard({ order, isMine, onUpdateStatus, onPickUp, onMarkSentToK
       {/* Left: table + items */}
       <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flex: 1, minWidth: 0 }}>
         <div style={{ background: 'rgba(46,213,115,0.08)', color: '#2ed573', padding: '5px 10px', borderRadius: '8px', fontSize: '0.88rem', fontWeight: '800', whiteSpace: 'nowrap' }}>
-          🪑 {order.tableNumber || '?'}
+          {order.source === 'hotel' ? `🏨 Room ${order.roomNumber || '?'}` : `🪑 ${order.tableNumber || '?'}`}
         </div>
         <div style={{ flex: 1, minWidth: 0 }}>
           <div style={{ fontSize: '0.94rem', fontWeight: '500', color: 'var(--text-main)', textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap' }}>

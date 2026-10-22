@@ -10,7 +10,7 @@ export default function About() {
       <Helmet>
         <title>About Us | DinePulse</title>
         <meta name="description" content="Learn about DinePulse, our mission to empower restaurants with smart digital automation and QR code ordering." />
-        <link rel="canonical" href="https://dinepulse.com/about" />
+        <link rel="canonical" href="https://taste.v4stay.com/about" />
       </Helmet>
 
       {/* Header */}

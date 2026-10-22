@@ -90,7 +90,7 @@ export default function KitchenDisplay() {
                     {order.source === 'hotel' ? (
                       <>
                         <span style={{ background: '#f59e0b', color: '#000', fontSize: '0.75rem', padding: '3px 8px', borderRadius: '6px', fontWeight: '900', letterSpacing: '0.5px' }}>HOTEL DELIVERY</span>
-                        <span>Room {order.roomNumber}</span>
+                        <span>Room {order.roomNumber || '—'}</span>
                         {order.hotelName && <span style={{ fontSize: '0.9rem', color: '#9ca3af', fontWeight: '500' }}>({order.hotelName})</span>}
                       </>
                     ) : (
@@ -145,9 +145,15 @@ export default function KitchenDisplay() {
                   </button>
                 )}
                 {order.status === 'preparing' && (
-                  <button onClick={() => updateStatus(order.id, order.source === 'hotel' ? 'delivered' : 'ready')} style={{ flex: 1, padding: '16px', background: '#2ed573', border: 'none', borderRadius: '14px', color: 'white', fontWeight: '800', fontSize: '1.1rem', cursor: 'pointer', fontFamily: 'inherit' }}>
-                    {order.source === 'hotel' ? `Deliver to Room ${order.roomNumber || ''}` : 'Mark Ready'}
-                  </button>
+                  order.source === 'hotel' ? (
+                    <button onClick={() => updateStatus(order.id, 'ready')} style={{ flex: 1, padding: '16px', background: '#2ed573', border: 'none', borderRadius: '14px', color: 'white', fontWeight: '800', fontSize: '1.1rem', cursor: 'pointer', fontFamily: 'inherit' }}>
+                      ✓ Food Ready for Hotel Pickup
+                    </button>
+                  ) : (
+                    <button onClick={() => updateStatus(order.id, 'ready')} style={{ flex: 1, padding: '16px', background: '#2ed573', border: 'none', borderRadius: '14px', color: 'white', fontWeight: '800', fontSize: '1.1rem', cursor: 'pointer', fontFamily: 'inherit' }}>
+                      Mark Ready
+                    </button>
+                  )
                 )}
               </div>
             </div>

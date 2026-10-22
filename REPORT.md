@@ -78,3 +78,43 @@ npm test
 # Run Production Build
 npm run build
 ```
+
+---
+
+## 6. V4Stay Integration Audit (Hotel Partners)
+
+The restaurant side of the V4Stay hotel-partner integration was audited end-to-end and hardened.
+
+### Integration contract (documented in `firestore.rules`)
+- A restaurant admin generates an **Integration Key** (`restaurants/{rid}.integrationKey`) in **Admin → Hotel Partners**.
+- The V4Stay hotel admin pastes that key; V4Stay creates a request doc at `restaurants/{rid}/hotelPartners/{partnerId}` with `integrationKey`, `hotelId`, `hotelName`, `status: 'pending'` (no extra fields needed; rules force pending on create, only the owner approves/revokes).
+- After approval, V4Stay hotel guests may place room orders into `restaurants/{rid}/orders` with `source: 'hotel'`, `roomNumber`, `hotelName`, `guestName`, `items[{name, qty, price}]`, `total`, `status`.
+- **Write ownership:** the **hotel (V4Stay) writes all order details** — creation (`source: 'hotel'`, room, guest, items, total) and the **final `delivered` status** (hotel people do the delivery). DinePulse only **reads** those details and writes workflow fields (`status` until food is ready, `sentToKitchen`, internal flags).
+- Order lifecycle: restaurant side `pending → confirmed → preparing → ready` ("Food Ready for Hotel Pickup"); the **hotel writes `delivered`** after room delivery (or `cancelled`). The restaurant never writes `delivered` for room orders.
+- Status is publicly readable, so V4Stay reads the live order doc to show the guest/hotel the restaurant's progress.
+
+### Issues found & fixed
+| File | Issue | Fix |
+| :--- | :--- | :--- |
+| `vercel.json`, `vite.config.js` | Content-Security-Policy blocked Razorpay (`checkout.razorpay.com` script, `api.razorpay.com` iframe/API) → payments silently broken on production and dev | Whitelisted Razorpay script/frame/connect domains |
+| `Dashboard.jsx` | Restaurant doc auto-created for Google sign-up users **without a trial plan** → `canPlaceOrders()` false → guest ordering permanently locked to the Free plan | Auto-provisioned `plan: 'trial'` + 14-day `trialEndsAt` |
+| `Dashboard.jsx` | "Trial Expired" badge shown even during an **active** trial | Shows "Free Trial — N days left" while active |
+| `Dashboard.jsx`, `Analytics.jsx`, `HotelPartners.jsx`, `ReceiptTemplate.jsx` | Hotel orders arriving from V4Stay with **string amounts** crashed revenue math (`(0 + "100")` → `"0100"`, then `toFixed` explodes) | Numeric coercion helpers (`toNum`), cancelled orders excluded from revenue |
+| `Settings.jsx` | Plan status read from form fields (no `plan`/`trialEndsAt`) → Premium users always shown as "Free / Trial Expired" | Plan evaluated from the actual Firestore record |
+| `StaffDashboard.jsx` | Missing `confirmed`/`delivered` statuses (used by hotel order flow) → delivered hotel orders rendered as actionable "Pending"; hotel orders showed a blank table badge | Added statuses + `🏨 Room N` badges |
+| `HotelPartners.jsx` | Restaurant could mark hotel room orders **Delivered** — but delivery is the hotel's job | Restaurant flow now ends at "✅ Food Ready for Hotel Pickup" (`ready`); the hotel (V4Stay) writes `delivered`. Added read-only states for `ready`/`delivered` |
+| `KitchenDisplay.jsx` | Kitchen had a "Deliver to Room" button on hotel orders | Replaced with "✓ Food Ready for Hotel Pickup" — hotel staff collects and delivers |
+| `Dashboard.jsx` | Hotel orders used the table-order status chain (moved to `completed`) | Hotel-specific chain: `pending → confirmed → preparing → ready`, with a "Hotel staff delivers" hint; table orders unchanged |
+| `StaffDashboard.jsx` | Room orders were claimable by restaurant waiters | Hotel room orders excluded from the waiter portal (delivery is hotel-side; managed in Admin → Hotel Partners) |
+| `KitchenDisplay.jsx`, `HotelPartners.jsx` | Missing `roomNumber`/`guestName` fallbacks in hotel order UI | Fallback rendering |
+| `ReceiptTemplate.jsx` | Receipt used `restaurant.logoUrl` but the app stores `restaurant.logo` → logo never printed | Fixed field |
+| `MenuView.jsx` | Guest cart "−" button passed `item.id` but cart is keyed by `cartKey` → minus did nothing for modifier items | `removeFromCartById` |
+| `index.css` | `spin`, `pulse` keyframes and `.animate-fade-in` referenced by many components but never defined → loaders frozen, no fade-ins | Defined all three |
+| `About.jsx`, `Contact.jsx`, `sitemap.xml`, `robots.txt` | Canonical URLs pointed to the stale `dinepulse.com` domain | Fixed to `taste.v4stay.com` |
+
+### Verification (post-fix)
+```text
+npm run lint   → 0 errors, 0 warnings
+npm test       → 4 files, 9/9 passed
+npm run build  → success (dist regenerated)
+```
