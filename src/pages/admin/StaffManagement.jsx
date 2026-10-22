@@ -34,6 +34,9 @@ export default function StaffManagement() {
   const [pin, setPin] = useState('');
   const [adding, setAdding] = useState(false);
   const [error, setError] = useState('');
+  // Shown only when a real permission-denied error occurs — the rules setup
+  // note is hidden otherwise so it doesn't read as an active problem.
+  const [permDenied, setPermDenied] = useState(false);
 
   // Restaurant doc (name display)
   useEffect(() => {
@@ -77,11 +80,12 @@ export default function StaffManagement() {
       setPin('');
     } catch (err) {
       console.error('Add waiter failed:', err);
-      setError(
-        err?.code === 'permission-denied'
-          ? 'Firestore rules are blocking the "staff" collection. Publish the staff rules shown in the setup note below, then try again.'
-          : 'Could not add waiter. Please try again.'
-      );
+      if (err?.code === 'permission-denied') {
+        setPermDenied(true);
+        setError('Firestore rules are blocking the "staff" collection. Publish the staff rules shown in the setup note below, then try again.');
+      } else {
+        setError('Could not add waiter. Please try again.');
+      }
     }
     setAdding(false);
   };
@@ -93,7 +97,12 @@ export default function StaffManagement() {
       await deleteDoc(doc(db, 'restaurants', restaurantId, 'staff', id));
     } catch (err) {
       console.error('Remove waiter failed:', err);
-      setError('Could not remove waiter. If this is a permissions error, publish the staff rules from the setup note below.');
+      if (err?.code === 'permission-denied') {
+        setPermDenied(true);
+        setError('Firestore rules are blocking the "staff" collection. Publish the staff rules shown in the setup note below, then try again.');
+      } else {
+        setError('Could not remove waiter. Please try again.');
+      }
     }
   };
 
@@ -163,7 +172,8 @@ export default function StaffManagement() {
         </div>
       )}
 
-      {/* One-time Firestore rules setup note */}
+      {/* One-time Firestore rules setup note — shown only after a permission-denied error */}
+      {permDenied && (
       <details style={{
         background: 'rgba(30,144,255,0.05)', border: '1px solid rgba(30,144,255,0.25)',
         borderRadius: '14px', padding: '14px 18px', marginTop: '24px', maxWidth: '860px'
@@ -191,6 +201,7 @@ export default function StaffManagement() {
           The complete rules file with everything included is also available in the project: <b>firestore.rules</b>
         </p>
       </details>
+      )}
     </AdminLayout>
   );
 }

@@ -8,6 +8,12 @@ import {
 import { X, Plus, Minus, ChefHat, Check, AlertCircle, Star, Crown, CreditCard, Smartphone } from 'lucide-react';
 import { canPlaceOrders } from '../../lib/subscription';
 import { initializeRazorpayPayment, DEFAULT_RAZORPAY_KEY } from '../../lib/razorpay';
+import {
+  addItem, removeItem, removeItemById,
+  getQty as getQtyFor,
+  getCartCount, computeTotals, buildOrderPayload,
+  validateRequiredOptions, selectedModifiersPrice, buildSelectedModifiers,
+} from '../../lib/cart';
 
 export default function MenuView() {
   const { restaurantId, tableNumber } = useParams();
@@ -79,81 +85,42 @@ export default function MenuView() {
   }, [restaurantId]);
 
   const currency = restaurant?.currency || '₹';
-  const cartCount = cart.reduce((s, i) => s + i.qty, 0);
-  const cartTotal = cart.reduce((s, i) => s + i.price * i.qty, 0);
-  const taxRate = restaurant?.taxRate || 0;
-  const taxAmount = cartTotal * (taxRate / 100);
-  const finalTotal = cartTotal + taxAmount;
+  const cartCount = getCartCount(cart);
+  const finalTotal = computeTotals(cart, restaurant?.taxRate).total;
 
-  const getCartKey = (item, modifiers = []) => {
-    if (modifiers.length === 0) return item.id;
-    return item.id + '_' + modifiers.map(m => `${m.groupName}_${m.optionName}`).sort().join('|');
-  };
-
+  // Wrapped cart operations — all mutation logic lives in src/lib/cart.js
   const addToCart = (item, modifiers = []) => {
-    const cartKey = getCartKey(item, modifiers);
-    const modifierPrice = modifiers.reduce((s, m) => s + (m.price || 0), 0);
-    setCart(prev => {
-      const exists = prev.find(i => i.cartKey === cartKey);
-      return exists
-        ? prev.map(i => i.cartKey === cartKey ? { ...i, qty: i.qty + 1 } : i)
-        : [...prev, { ...item, cartKey, modifiers, qty: 1, basePrice: item.price, price: item.price + modifierPrice }];
-    });
+    setCart(prev => addItem(prev, item, modifiers));
     setShowOptionsFor(null);
     setItemOptions([]);
   };
 
-  const removeFromCart = (cartKey) => {
-    setCart(prev => {
-      const item = prev.find(i => i.cartKey === cartKey);
-      if (item?.qty === 1) return prev.filter(i => i.cartKey !== cartKey);
-      return prev.map(i => i.cartKey === cartKey ? { ...i, qty: i.qty - 1 } : i);
-    });
-  };
+  const removeFromCart = (cartKey) => setCart(prev => removeItem(prev, cartKey));
 
   // Menu cards only know the item id — decrement whichever cart entry
   // (including modifier variants) belongs to that item.
-  const removeFromCartById = (id) => {
-    setCart(prev => {
-      const idx = prev.findIndex(i => i.id === id);
-      if (idx === -1) return prev;
-      if (prev[idx].qty <= 1) return prev.filter(i => i !== prev[idx]);
-      return prev.map((i, index) => index === idx ? { ...i, qty: i.qty - 1 } : i);
-    });
-  };
+  const removeFromCartById = (id) => setCart(prev => removeItemById(prev, id));
 
-  const getQty = (id) => cart.reduce((s, i) => s + (i.id === id ? i.qty : 0), 0);
-
-  const toastTimeout = useRef(null);
+  const getQty = (id) => getQtyFor(cart, id);
 
   const showToast = (msg, type = 'success') => {
-    if (toastTimeout.current) clearTimeout(toastTimeout.current);
-    setToast({ msg, type });
-    toastTimeout.current = setTimeout(() => {
-      setToast(null);
-      toastTimeout.current = null;
-    }, 3500);
+    // Each toast renders a fresh instance (monotonic key derived from the
+    // previous toast) — the Toast component's own effect provides the
+    // auto-dismiss, no timer refs needed at page level.
+    setToast(prev => ({ msg, type, key: (prev?.key || 0) + 1 }));
   };
 
   const placeOrder = async (method = 'Cash') => {
     if (cart.length === 0) return;
     setOrdering(true);
     try {
-      await addDoc(collection(db, 'restaurants', restaurantId, 'orders'), {
-        tableNumber,
-        items: cart.map(i => ({
-          id: i.id, name: i.name, price: i.price, qty: i.qty,
-          modifiers: i.modifiers || [],
-          basePrice: i.basePrice ?? i.price
-        })),
-        subtotal: cartTotal,
-        taxAmount,
-        total: finalTotal,
-        status: 'pending',
-        createdAt: serverTimestamp(),
-        paymentMethod: method,
-        instructions: instructions.trim() || '',
+      const payload = buildOrderPayload({
+        cart, tableNumber, taxRate: restaurant?.taxRate, method,
+        extra: method === 'Cash' ? {} : {},
+        instructions,
       });
+      payload.createdAt = serverTimestamp();
+      await addDoc(collection(db, 'restaurants', restaurantId, 'orders'), payload);
       setCart([]);
       setShowCart(false);
       setShowUpi(false);
@@ -161,6 +128,27 @@ export default function MenuView() {
     } catch (err) {
       console.error('placeOrder error:', err);
       showToast('Failed to place order. Please try again.', 'error');
+    } finally {
+      setOrdering(false);
+    }
+  };
+
+  const submitRazorpayOrder = async (res) => {
+    const payload = buildOrderPayload({
+      cart, tableNumber, taxRate: restaurant?.taxRate, method: 'Razorpay Online',
+      extra: { paymentStatus: 'paid', razorpayPaymentId: res.razorpay_payment_id },
+      instructions,
+    });
+    payload.createdAt = serverTimestamp();
+    try {
+      await addDoc(collection(db, 'restaurants', restaurantId, 'orders'), payload);
+      setCart([]);
+      setShowCart(false);
+      setShowUpi(false);
+      showToast('Payment successful! Your order has been sent to the kitchen. 🍳');
+    } catch (err) {
+      console.error('Razorpay order save failed:', err);
+      showToast('Payment succeeded but the order could not be saved. Please contact the restaurant.', 'error');
     } finally {
       setOrdering(false);
     }
@@ -177,30 +165,7 @@ export default function MenuView() {
         name: restaurant?.name || 'DinePulse Fine Dining',
         description: `Order for Table ${tableNumber}`,
         key: customKey,
-        onSuccess: async (res) => {
-          await addDoc(collection(db, 'restaurants', restaurantId, 'orders'), {
-            tableNumber,
-            items: cart.map(i => ({
-              id: i.id, name: i.name, price: i.price, qty: i.qty,
-              modifiers: i.modifiers || [],
-              basePrice: i.basePrice ?? i.price
-            })),
-            subtotal: cartTotal,
-            taxAmount,
-            total: finalTotal,
-            status: 'pending',
-            paymentMethod: 'Razorpay Online',
-            paymentStatus: 'paid',
-            razorpayPaymentId: res.razorpay_payment_id,
-            createdAt: serverTimestamp(),
-            instructions: instructions.trim() || '',
-          });
-          setCart([]);
-          setShowCart(false);
-          setShowUpi(false);
-          showToast('Payment successful! Your order has been sent to the kitchen. 🍳');
-          setOrdering(false);
-        },
+        onSuccess: submitRazorpayOrder,
         onFailure: (err) => {
           setOrdering(false);
           if (!err?.dismissed) {
@@ -266,10 +231,7 @@ export default function MenuView() {
     <div style={{ minHeight: '100vh', background: 'var(--bg-color)', paddingBottom: '90px' }}>
       {/* Toast Notification */}
       {toast && (
-        <div style={{ position: 'fixed', top: '20px', left: '50%', transform: 'translateX(-50%)', zIndex: 999, background: toast.type === 'error' ? '#ff4757' : 'linear-gradient(135deg, #d97706, #f59e0b)', color: toast.type === 'error' ? 'white' : '#060709', padding: '12px 24px', borderRadius: '50px', fontWeight: '800', boxShadow: '0 8px 24px rgba(0,0,0,0.3)', display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.9rem' }}>
-          {toast.type === 'error' ? <AlertCircle size={16} /> : <Check size={16} />}
-          {toast.msg}
-        </div>
+        <Toast toast={toast} onDone={() => setToast(null)} />
       )}
 
       {/* Header */}
@@ -561,17 +523,14 @@ export default function MenuView() {
                 ))}
               </div>
               <button onClick={() => {
-                const selectedModifiers = itemOptions.flatMap(g => {
-                  if (g.type === 'single') {
-                    if (g.selected === null) return [];
-                    return [{ groupName: g.groupName, optionName: g.options[g.selected]?.name ?? 'Option', price: g.options[g.selected]?.price ?? 0 }];
-                  }
-                  const indices = g.selected || [];
-                  return indices.map(i => ({ groupName: g.groupName, optionName: g.options[i]?.name ?? 'Option', price: g.options[i]?.price ?? 0 }));
-                });
-                addToCart(item, selectedModifiers);
+                // Required option groups must be satisfied before adding
+                if (!validateRequiredOptions(item.options || [], itemOptions)) {
+                  showToast('Please choose an option for required fields first', 'error');
+                  return;
+                }
+                addToCart(item, buildSelectedModifiers(itemOptions));
               }} style={{ width: '100%', marginTop: '20px', padding: '14px', background: 'linear-gradient(135deg, #d97706, #f59e0b)', color: '#060709', border: 'none', borderRadius: '14px', fontWeight: '900', fontSize: '0.95rem', cursor: 'pointer', fontFamily: 'inherit', boxShadow: '0 4px 16px rgba(245,158,11,0.35)' }}>
-                Add to Cart — {currency}{(item.price + itemOptions.reduce((s, g) => s + (g.type === 'single' ? (g.selected !== null ? (g.options[g.selected]?.price || 0) : 0) : g.selected.reduce((ss, oi) => ss + (g.options[oi]?.price || 0), 0)), 0)).toFixed(2)}
+                Add to Cart — {currency}{(item.price + selectedModifiersPrice(itemOptions)).toFixed(2)}
               </button>
             </div>
           </div>
@@ -618,6 +577,24 @@ export default function MenuView() {
           </div>
         </div>
       )}
+    </div>
+  );
+}
+
+// ─── Toast ───────────────────────────────────────────────────────────────────
+// Self-dismissing notification. A fresh instance is rendered per toast (keyed
+// by the parent), so its own timer resets naturally — no parent-side refs.
+function Toast({ toast, onDone }) {
+  const { type, msg, key } = toast;
+  useEffect(() => {
+    const t = setTimeout(onDone, 3500);
+    return () => clearTimeout(t);
+    // Only the toast identity resets the timer — parent re-renders don't
+  }, [key]); // eslint-disable-line react-hooks/exhaustive-deps
+  return (
+    <div style={{ position: 'fixed', top: '20px', left: '50%', transform: 'translateX(-50%)', zIndex: 999, background: type === 'error' ? '#ff4757' : 'linear-gradient(135deg, #d97706, #f59e0b)', color: type === 'error' ? 'white' : '#060709', padding: '12px 24px', borderRadius: '50px', fontWeight: '800', boxShadow: '0 8px 24px rgba(0,0,0,0.3)', display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.9rem', whiteSpace: 'nowrap' }}>
+      {type === 'error' ? <AlertCircle size={16} /> : <Check size={16} />}
+      {msg}
     </div>
   );
 }

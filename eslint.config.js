@@ -24,4 +24,10 @@ export default defineConfig([
       'no-empty': ['error', { allowEmptyCatch: true }],
     },
   },
+  {
+    files: ['**/__tests__/**/*.{js,jsx}', '**/*.test.{js,jsx}'],
+    languageOptions: {
+      globals: { ...globals.browser, ...globals.jest, ...globals.vitest },
+    },
+  },
 ])

@@ -3,22 +3,18 @@ import { useNavigate } from 'react-router-dom';
 import {
   doc, onSnapshot, collection, query, orderBy, updateDoc,
   getDoc, getDocs, addDoc, serverTimestamp, increment,
-  writeBatch, limit
+  runTransaction, limit
 } from 'firebase/firestore';
 import { db } from '../../lib/firebase';
 import { LogOut, CheckCircle2, Hand, Zap, Wifi, WifiOff, Package } from 'lucide-react';
 import { printKitchenTicket } from '../../components/ReceiptTemplate';
+import SlideToConfirm from '../../components/SlideToConfirm';
+import {
+  formatDuration, todayKey, getStatusConfig,
+  filterStaffTodayOrders, resolveClaim,
+} from '../../lib/orderLogic';
 
 const HEARTBEAT_MS = 30 * 1000; // every 30s: prove presence + add online seconds
-const todayKey = () => new Date().toISOString().slice(0, 10);
-
-function formatDuration(totalSeconds) {
-  const s = Math.max(0, Math.floor(totalSeconds || 0));
-  const h = Math.floor(s / 3600);
-  const m = Math.floor((s % 3600) / 60);
-  if (h > 0) return `${h}h ${String(m).padStart(2, '0')}m`;
-  return `${m}m ${String(s % 60).padStart(2, '0')}s`;
-}
 
 export default function StaffDashboard() {
   const navigate = useNavigate();
@@ -159,17 +155,7 @@ export default function StaffDashboard() {
 
     const q = query(collection(db, 'restaurants', session.restaurantId, 'orders'), orderBy('createdAt', 'desc'));
     const unsubOrders = onSnapshot(q, snap => {
-      const today = new Date().toDateString();
-      // Hotel (V4Stay) room orders are delivered by hotel staff — they follow
-      // their own flow (Admin → Hotel Partners) and are NOT claimable by waiters.
-      const allOrders = snap.docs
-        .map(d => ({ id: d.id, ...d.data() }))
-        .filter(o => o.source !== 'hotel');
-      const todayOrders = allOrders.filter(o => {
-        const d = o.createdAt?.toDate?.();
-        return d && d.toDateString() === today;
-      });
-      setOrders(todayOrders);
+      setOrders(filterStaffTodayOrders(snap.docs.map(d => ({ id: d.id, ...d.data() }))));
     });
 
     return () => {
@@ -182,27 +168,40 @@ export default function StaffDashboard() {
     await updateDoc(doc(db, 'restaurants', session.restaurantId, 'orders', orderId), { status });
   };
 
-  // 🤝 Swiggy-style claim: first waiter to tap wins, everyone else sees who got it
+  // 🤝 Swiggy-style claim: first waiter to tap wins. Implemented with a
+  // transaction so two waiters racing on the same order cannot both take it —
+  // the loser is told exactly which colleague claimed it (via the live feed).
   const pickUpOrder = async (order) => {
     if (!session?.restaurantId || !session?.staffId) return;
+    const orderRef = doc(db, 'restaurants', session.restaurantId, 'orders', order.id);
+    const staffRef = doc(db, 'restaurants', session.restaurantId, 'staff', session.staffId);
     try {
-      const batch = writeBatch(db);
-      batch.update(doc(db, 'restaurants', session.restaurantId, 'orders', order.id), {
-        pickedBy: { id: session.staffId, name: session.staffName },
-        pickedAt: serverTimestamp(),
+      await runTransaction(db, async (tx) => {
+        const snap = await tx.get(orderRef);
+        const verdict = resolveClaim(snap.data(), session.staffId);
+        if (verdict !== 'win') {
+          // 'lost': someone else claimed it · 'mine': already the waiter's own
+          // · 'aborted': deleted / status moved on. Never touch the doc.
+          throw new Error('ORDER_CLAIMED');
+        }
+        tx.update(orderRef, {
+          pickedBy: { id: session.staffId, name: session.staffName },
+          pickedAt: serverTimestamp(),
+        });
+        tx.update(staffRef, {
+          ordersPicked: increment(1),
+          statsDate: todayKey(),
+        });
+        if (shiftIdRef.current) {
+          tx.update(
+            doc(db, 'restaurants', session.restaurantId, 'staff', session.staffId, 'shifts', shiftIdRef.current),
+            { ordersPicked: increment(1) }
+          );
+        }
       });
-      batch.update(doc(db, 'restaurants', session.restaurantId, 'staff', session.staffId), {
-        ordersPicked: increment(1),
-        statsDate: todayKey(),
-      });
-      if (shiftIdRef.current) {
-        batch.update(
-          doc(db, 'restaurants', session.restaurantId, 'staff', session.staffId, 'shifts', shiftIdRef.current),
-          { ordersPicked: increment(1) }
-        );
-      }
-      await batch.commit();
     } catch (err) {
+      // Losing the race is normal — the live snapshot will show "Order went to …".
+      if (err?.message === 'ORDER_CLAIMED') return;
       console.error('Pick up failed:', err);
     }
   };
@@ -277,17 +276,18 @@ export default function StaffDashboard() {
           <WifiOff size={56} style={{ color: 'var(--text-muted)', opacity: 0.4, marginBottom: '16px' }} />
           <h1 style={{ fontSize: '1.5rem', fontWeight: '800', marginBottom: '8px' }}>You're off duty, {session.staffName}</h1>
           <p style={{ color: 'var(--text-muted)', marginBottom: '28px' }}>Your shift has been recorded. New orders will not alert you until you clock back in.</p>
-          <div style={{ display: 'flex', gap: '12px', justifyContent: 'center', flexWrap: 'wrap' }}>
-            <button onClick={goOnDuty} style={{
-              display: 'flex', alignItems: 'center', gap: '8px', padding: '16px 32px',
-              background: 'linear-gradient(135deg, #2ed573, #26af5f)', color: 'white', border: 'none',
-              borderRadius: '14px', fontWeight: '900', fontSize: '1.05rem', cursor: 'pointer', fontFamily: 'inherit',
-              boxShadow: '0 6px 20px rgba(46,213,115,0.35)'
-            }}>
-              <Wifi size={18} /> Clock In — Start New Shift
-            </button>
+          <div style={{ display: 'flex', gap: '12px', justifyContent: 'center', flexWrap: 'wrap', width: 'min(420px, 92vw)' }}>
+            <div style={{ width: '100%' }}>
+              <SlideToConfirm
+                label="Slide to Clock In — Start New Shift"
+                confirmLabel="You're online!"
+                accent="#2ed573"
+                thumbIcon={<Wifi size={20} color="#2ed573" />}
+                onConfirm={goOnDuty}
+              />
+            </div>
             <button onClick={handleLogout} style={{
-              display: 'flex', alignItems: 'center', gap: '8px', padding: '16px 24px',
+              display: 'flex', alignItems: 'center', gap: '8px', padding: '14px 24px',
               background: 'transparent', border: '1px solid var(--border)', color: 'var(--text-muted)',
               borderRadius: '14px', fontWeight: '700', fontSize: '0.95rem', cursor: 'pointer', fontFamily: 'inherit'
             }}>
@@ -355,14 +355,15 @@ export default function StaffDashboard() {
               </div>
             </div>
           </div>
-          <button onClick={goOffDuty} style={{
-            display: 'flex', alignItems: 'center', gap: '8px',
-            background: 'rgba(255,71,87,0.08)', border: '1.5px solid rgba(255,71,87,0.35)',
-            padding: '12px 22px', borderRadius: '14px', cursor: 'pointer', color: '#ff4757',
-            fontWeight: '800', fontFamily: 'inherit', fontSize: '0.95rem', flexShrink: 0
-          }}>
-            <WifiOff size={16} /> Shift Over — Go Offline
-          </button>
+          <div style={{ width: '260px', maxWidth: '100%' }}>
+            <SlideToConfirm
+              label="Slide to Go Offline"
+              confirmLabel="Shift over!"
+              accent="#ff4757"
+              thumbIcon={<WifiOff size={18} color="#ff4757" />}
+              onConfirm={goOffDuty}
+            />
+          </div>
         </div>
 
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px', flexWrap: 'wrap', gap: '10px' }}>
@@ -402,16 +403,7 @@ export default function StaffDashboard() {
 
 // ─── Order Card ───────────────────────────────────────────────────────────────
 function StaffOrderCard({ order, isMine, onUpdateStatus, onPickUp, onMarkSentToKitchen }) {
-  const statusConfig = {
-    pending: { label: 'Pending', color: '#ff9f43', next: 'preparing', nextLabel: 'Start' },
-    confirmed: { label: 'Confirmed', color: '#3b82f6', next: 'preparing', nextLabel: 'Start' },
-    preparing: { label: 'Preparing', color: '#1e90ff', next: 'ready', nextLabel: 'Ready' },
-    ready: { label: 'Ready', color: '#2ed573', next: 'completed', nextLabel: 'Serve' },
-    completed: { label: 'Done', color: '#a4b0be', next: null },
-    delivered: { label: 'Delivered', color: '#10b981', next: null },
-    cancelled: { label: 'Cancelled', color: '#ff4757', next: null },
-  };
-  const cfg = statusConfig[order.status] || statusConfig.pending;
+  const cfg = getStatusConfig(order.status);
   const time = order.createdAt?.toDate?.()?.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
   const unclaimed = order.status === 'pending' && !order.pickedBy;
   const claimedByOther = order.status === 'pending' && order.pickedBy && !isMine;
@@ -462,15 +454,15 @@ function StaffOrderCard({ order, isMine, onUpdateStatus, onPickUp, onMarkSentToK
               </div>
             </div>
           </div>
-          <button onClick={() => onPickUp(order)} style={{
-            display: 'flex', alignItems: 'center', gap: '10px',
-            background: 'linear-gradient(135deg, #2ed573, #26af5f)',
-            border: 'none', borderRadius: '14px', padding: '14px 28px',
-            cursor: 'pointer', color: 'white', fontWeight: '900', fontSize: '1rem', fontFamily: 'inherit',
-            boxShadow: '0 6px 20px rgba(46,213,115,0.4)', whiteSpace: 'nowrap'
-          }}>
-            <Hand size={18} /> 🤝 Pick Up Order
-          </button>
+          <div style={{ width: 'min(230px, 100%)', flexShrink: 0 }}>
+            <SlideToConfirm
+              label="Slide to Pick Up"
+              confirmLabel="Claimed!"
+              accent="#2ed573"
+              thumbIcon={<Hand size={18} color="#2ed573" />}
+              onConfirm={() => onPickUp(order)}
+            />
+          </div>
         </div>
       </div>
     );

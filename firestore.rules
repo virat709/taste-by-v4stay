@@ -76,11 +76,17 @@ service cloud.firestore {
       // create   : only the owner (manager adds waiters)
       // delete   : only the owner (manager removes waiters)
       // update   : waiter device (clock in/out, 30s heartbeat, pickup counter)
+      //            — but the waiter name and personal PIN are IMMUTABLE for
+      //            unauthenticated devices: identity changes only via the
+      //            manager (delete + re-add). Prevents anyone with the
+      //            restaurant ID from rewriting a waiter's credentials.
       match /staff/{sid} {
         allow read: if true;
         allow create, delete:
           if request.auth != null && request.auth.uid == rid;
-        allow update: if true;
+        allow update:
+          if request.resource.data.name == resource.data.name &&
+             request.resource.data.pin == resource.data.pin;
 
         // ── Shift logs (manager-maintained duty records) ────────────────────
         // One doc per duty shift: startedAt, endedAt, onlineSeconds,

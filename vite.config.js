@@ -8,6 +8,8 @@ export default defineConfig({
     globals: true,
     environment: 'jsdom',
     setupFiles: './src/test/setup.js',
+    // 'threads' pool — 'forks' workers time out on Windows; 'threads' is stable here.
+    pool: 'threads',
   },
 
   server: {
