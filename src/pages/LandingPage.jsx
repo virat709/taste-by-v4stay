@@ -1,9 +1,9 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import {
   ArrowRight, CheckCircle, Smartphone, BarChart3,
   HelpCircle, Star, Sparkles, ChefHat, ChevronRight,
-  Plus, ShoppingBag, Flame, TrendingUp, Sun, Moon, Wine, Award
+  Plus, ShoppingBag, Flame, TrendingUp, Sun, Moon, Wine, Award, Menu, X
 } from 'lucide-react';
 import { Helmet } from 'react-helmet-async';
 
@@ -16,6 +16,9 @@ export default function LandingPage() {
   const [cartTotal, setCartTotal] = useState(1450);
   const [activeCategory, setActiveCategory] = useState('mains');
   const [openFaqIndex, setOpenFaqIndex] = useState(0);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
+  const closeMobileMenu = () => setMobileMenuOpen(false);
 
   const toggleTheme = () => {
     setThemeMode(prev => prev === 'dark' ? 'light' : 'dark');
@@ -45,9 +48,85 @@ export default function LandingPage() {
   const monthlyRevenueBoost = Math.round(tablesCount * 8500);
   const hoursSaved = Math.round(tablesCount * 5.5);
 
+  // Structured data: Organization, WebSite, WebPage, BreadcrumbList,
+  // SoftwareApplication, FAQPage & HowTo (all mirror visible on-page content)
   const jsonLdData = {
     "@context": "https://schema.org",
     "@graph": [
+      {
+        "@type": "Organization",
+        "@id": "https://taste.v4stay.com/#organization",
+        "name": "v4stay",
+        "alternateName": "DinePulse by v4stay",
+        "url": "https://taste.v4stay.com/",
+        "slogan": "The gold standard in restaurant automation and QR menus for Indian fine dining",
+        "areaServed": ["IN"],
+        "knowsAbout": [
+          "Restaurant automation in India",
+          "Restaurant QR menu software",
+          "Contactless ordering for restaurants",
+          "Kitchen display systems",
+          "Cloud kitchen software in India",
+          "Digital menu software for hotels"
+        ],
+        "logo": {
+          "@type": "ImageObject",
+          "url": "https://taste.v4stay.com/logo.png",
+          "caption": "DinePulse by v4stay logo"
+        },
+        "description": "v4stay builds DinePulse, the luxury restaurant automation and QR-menu platform for Indian fine dining, heritage hotels, lounges, and cloud kitchens.",
+        "sameAs": ["https://github.com/virat709/taste-by-v4stay"]
+      },
+      {
+        "@type": "WebSite",
+        "@id": "https://taste.v4stay.com/#website",
+        "url": "https://taste.v4stay.com/",
+        "name": "DinePulse by v4stay",
+        "publisher": { "@id": "https://taste.v4stay.com/#organization" },
+        "inLanguage": "en"
+      },
+      {
+        "@type": "WebPage",
+        "@id": "https://taste.v4stay.com/#webpage",
+        "url": "https://taste.v4stay.com/",
+        "name": "Best Restaurant Automation Software in India | DinePulse",
+        "description": "DinePulse is the best restaurant automation software in India: restaurant QR menus, contactless table ordering, a live kitchen display, and revenue analytics for fine-dining restaurants, hotels, lounges, bars, and cloud kitchens.",
+        "keywords": [
+          "restaurant automation India",
+          "restaurant QR menu",
+          "best restaurant automation software in India",
+          "QR code menu for restaurants",
+          "contactless ordering software",
+          "digital menu software India",
+          "restaurant kitchen display system",
+          "cloud kitchen software India",
+          "table QR ordering"
+        ],
+        "speakable": {
+          "@type": "SpeakableSpecification",
+          "cssSelector": [".key-takeaway", "h1", "#what-is-dinepulse"]
+        },
+        "isPartOf": { "@id": "https://taste.v4stay.com/#website" },
+        "publisher": { "@id": "https://taste.v4stay.com/#organization" },
+        "about": { "@id": "https://taste.v4stay.com/#software" },
+        "primaryImageOfPage": "https://taste.v4stay.com/logo.png",
+        "inLanguage": "en",
+        "datePublished": "2026-01-10",
+        "dateModified": "2026-10-24",
+        "breadcrumb": { "@id": "https://taste.v4stay.com/#breadcrumb" }
+      },
+      {
+        "@type": "BreadcrumbList",
+        "@id": "https://taste.v4stay.com/#breadcrumb",
+        "itemListElement": [
+          {
+            "@type": "ListItem",
+            "position": 1,
+            "name": "Home",
+            "item": "https://taste.v4stay.com/"
+          }
+        ]
+      },
       {
         "@type": "SoftwareApplication",
         "@id": "https://taste.v4stay.com/#software",
@@ -57,12 +136,107 @@ export default function LandingPage() {
         "logo": "https://taste.v4stay.com/logo.png",
         "operatingSystem": "Web, iOS, Android",
         "applicationCategory": "BusinessApplication",
-        "description": "Ultra-Luxury Digital Menu and QR Code Automation System for Top Indian Fine Dining Restaurants, Hotels, and Cloud Kitchens.",
+        "provider": { "@id": "https://taste.v4stay.com/#organization" },
+        "description": "DinePulse is the best restaurant automation software in India: a restaurant QR menu with photos and veg/non-veg tags, contactless table ordering, a live kitchen display system, staff management, and revenue analytics — built for Indian fine dining, hotels, lounges, bars, and cloud kitchens.",
+        "keywords": "restaurant automation India, restaurant QR menu, best restaurant automation software in India, QR code menu, contactless ordering, kitchen display system, cloud kitchen software, hotel room service QR menu",
         "offers": {
           "@type": "Offer",
           "price": "14999",
           "priceCurrency": "INR"
         }
+      },
+      {
+        "@type": "HowTo",
+        "@id": "https://taste.v4stay.com/#howto-launch",
+        "name": "How to launch contactless QR dining in your restaurant with DinePulse",
+        "description": "Three steps to replace paper menus with contactless QR ordering using DinePulse by v4stay.",
+        "totalTime": "P1D",
+        "tool": [
+          { "@type": "HowToTool", "name": "DinePulse free trial account" },
+          { "@type": "HowToTool", "name": "Any smartphone with a camera" }
+        ],
+        "step": [
+          {
+            "@type": "HowToStep",
+            "position": 1,
+            "name": "Build your digital menu",
+            "text": "Add your dishes, prices, photos, descriptions, and veg/non-veg tags in the DinePulse dashboard — no designer or developer required."
+          },
+          {
+            "@type": "HowToStep",
+            "position": 2,
+            "name": "Print and place table QR standees",
+            "text": "Download the auto-generated table QR codes and place one standee on every table, booth, or lounge seat."
+          },
+          {
+            "@type": "HowToStep",
+            "position": 3,
+            "name": "Go live with the kitchen display",
+            "text": "Open the Kitchen Display System on your kitchen screen so guest QR orders arrive instantly, colour-coded by urgency."
+          }
+        ]
+      },
+      {
+        "@type": "FAQPage",
+        "@id": "https://taste.v4stay.com/#faq-schema",
+        "mainEntity": [
+          {
+            "@type": "Question",
+            "name": "What is a QR menu for restaurants?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "A QR menu is a digital menu accessible by scanning a QR code on a restaurant table with any smartphone camera. Guests view dishes, photos, and prices on their mobile browser and order directly without downloading an app."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "How does restaurant automation work with DinePulse?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "DinePulse automates table ordering by sending guest QR orders directly to kitchen displays and staff devices, eliminating manual order-taking and reducing wait times."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Is QR ordering safe and contactless for guests?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Yes, QR ordering is 100% contactless. Guests use their own mobile devices, eliminating touch points with shared physical menus."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "How much does DinePulse cost?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "DinePulse offers a 14-day free trial with access to all features. Premium plans are ₹14,999 per year with unlimited digital menus, table QR code downloads, staff logins, and real-time analytics."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Do guests need to download an app to view the menu?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "No app download is required! The digital menu opens instantly in Safari, Chrome, or Firefox upon scanning the table QR code."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Which is the best restaurant automation software in India?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "DinePulse is the best restaurant automation software in India for fine-dining restaurants, heritage hotels, lounges, bars, and cloud kitchens. It combines a restaurant QR menu, contactless table ordering, a live kitchen display system, staff management, and revenue analytics at ₹14,999 per year with a 14-day free trial, and charges no commissions per order."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Does a restaurant QR menu work for cloud kitchens and hotel rooms in India?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Yes. A restaurant QR menu works anywhere guests can scan a code — dine-in tables, cloud kitchen pickup counters, hotel rooms, lounge seats, and boutique bars. DinePulse supports unlimited table QR codes on one subscription, so a single account covers every corner of your venue."
+            }
+          }
+        ]
       }
     ]
   };
@@ -75,9 +249,22 @@ export default function LandingPage() {
       <div className="ambient-glow-center" />
 
       <Helmet>
-        <title>DinePulse — #1 Luxury Indian Restaurant Automation & QR Menus</title>
-        <meta name="description" content="Elevate your Indian restaurant with DinePulse. Interactive QR menus, real-time kitchen displays, thali pairings, and automated table service." />
-        <meta name="keywords" content="restaurant software India, luxury restaurant software, Indian fine dining automation, QR menu software" />
+        <title>Best Restaurant Automation Software in India | DinePulse</title>
+        <meta name="description" content="DinePulse is the best restaurant automation software in India — table QR menus, contactless ordering, live KDS & revenue analytics. Free 14-day trial." />
+        <meta name="keywords" content="restaurant automation India, restaurant QR menu, best restaurant automation software in India, QR code menu for restaurants, contactless ordering software, digital menu software India, restaurant kitchen display system, cloud kitchen software India, hotel restaurant management software, table QR ordering, restaurant POS alternative India, fine dining reservation and ordering software" />
+
+        {/* Social sharing previews (Open Graph + Twitter) */}
+        <meta property="og:type" content="website" />
+        <meta property="og:site_name" content="DinePulse by v4stay" />
+        <meta property="og:title" content="Best Restaurant Automation Software in India | DinePulse" />
+        <meta property="og:description" content="DinePulse is the best restaurant automation software in India — restaurant QR menus, contactless ordering, live kitchen display & revenue analytics. Free 14-day trial." />
+        <meta property="og:url" content="https://taste.v4stay.com/" />
+        <meta property="og:image" content="https://taste.v4stay.com/logo.png" />
+        <meta name="twitter:card" content="summary_large_image" />
+        <meta name="twitter:title" content="Best Restaurant Automation Software in India | DinePulse" />
+        <meta name="twitter:description" content="Restaurant QR menus, contactless ordering, live KDS, and revenue analytics for fine-dining restaurants, hotels & cloud kitchens in India. Built by v4stay." />
+        <meta name="twitter:image" content="https://taste.v4stay.com/logo.png" />
+
         <link rel="canonical" href="https://taste.v4stay.com/" />
         
         <script type="application/ld+json">
@@ -90,12 +277,12 @@ export default function LandingPage() {
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer' }} onClick={() => navigate('/')}>
           <img src="/logo.png" alt="DinePulse Gold Logo" style={{ height: '28px', width: 'auto', borderRadius: '6px', boxShadow: '0 2px 10px var(--primary-glow)' }} />
           <span className="font-serif" style={{ fontSize: '1.35rem', fontWeight: '900', letterSpacing: '-0.5px' }}>DinePulse</span>
-          <span style={{ background: 'rgba(245, 158, 11, 0.12)', color: '#f59e0b', border: '1px solid rgba(245, 158, 11, 0.3)', borderRadius: '50px', padding: '3px 10px', fontSize: '0.72rem', fontWeight: '700', display: 'flex', alignItems: 'center', gap: '4px' }}>
+          <span className="header-badge" style={{ background: 'rgba(245, 158, 11, 0.12)', color: '#f59e0b', border: '1px solid rgba(245, 158, 11, 0.3)', borderRadius: '50px', padding: '3px 10px', fontSize: '0.72rem', fontWeight: '700', display: 'flex', alignItems: 'center', gap: '4px' }}>
             <Award size={12} color="#f59e0b" /> Premium Indian Hospitality
           </span>
         </div>
 
-        <div style={{ display: 'flex', gap: '20px', alignItems: 'center' }}>
+        <div style={{ display: 'flex', gap: '20px', alignItems: 'center' }} className="lp-header-actions">
           <nav style={{ display: 'flex', gap: '18px', fontSize: '0.88rem', fontWeight: '700', color: 'var(--text-muted)' }}>
             <a href="#luxury-experience" style={{ color: 'inherit', textDecoration: 'none' }}>Experience</a>
             <a href="#interactive-demo" style={{ color: 'inherit', textDecoration: 'none' }}>Live Suite</a>
@@ -104,24 +291,46 @@ export default function LandingPage() {
             <a href="#faq" style={{ color: 'inherit', textDecoration: 'none' }}>FAQ</a>
           </nav>
 
-          <button onClick={toggleTheme} style={{ background: 'var(--surface-hover)', border: '1px solid var(--border)', borderRadius: '50px', padding: '6px 12px', color: 'var(--text-main)', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '5px', fontSize: '0.8rem' }}>
-            {themeMode === 'dark' ? <><Sun size={13} color="#f59e0b" /> Light</> : <><Moon size={13} color="#14b8a6" /> Dark</>}
+          <button onClick={toggleTheme} className="lp-theme-toggle" style={{ background: 'var(--surface-hover)', border: '1px solid var(--border)', borderRadius: '50px', padding: '6px 12px', color: 'var(--text-main)', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '5px', fontSize: '0.8rem' }}>
+            {themeMode === 'dark' ? <><Sun size={13} color="#f59e0b" /><span className="lp-theme-label">Light</span></> : <><Moon size={13} color="#14b8a6" /><span className="lp-theme-label">Dark</span></>}
           </button>
 
-          <button onClick={() => navigate('/auth')} className="btn-secondary" style={{ padding: '8px 18px', fontSize: '0.88rem' }}>Sign In</button>
-          <button onClick={() => navigate('/auth')} className="btn-primary" style={{ padding: '8px 20px', fontSize: '0.88rem' }}>Get Started Free <ArrowRight size={13} /></button>
+          <button onClick={() => navigate('/auth')} className="btn-secondary lp-signin" style={{ padding: '8px 18px', fontSize: '0.88rem' }}>Sign In</button>
+          <button onClick={() => navigate('/auth')} className="btn-primary lp-cta" style={{ padding: '8px 20px', fontSize: '0.88rem' }}>Get Started Free <ArrowRight size={13} /></button>
+
+          <button
+            className="lp-hamburger"
+            onClick={() => setMobileMenuOpen(prev => !prev)}
+            aria-label={mobileMenuOpen ? 'Close menu' : 'Open menu'}
+            aria-expanded={mobileMenuOpen}>
+            {mobileMenuOpen ? <X size={20} /> : <Menu size={20} />}
+          </button>
         </div>
+
+        {mobileMenuOpen && (
+          <div className="lp-mobile-menu">
+            <a href="#luxury-experience" onClick={closeMobileMenu}>Experience</a>
+            <a href="#interactive-demo" onClick={closeMobileMenu}>Live Suite</a>
+            <a href="#roi-calculator" onClick={closeMobileMenu}>ROI Growth</a>
+            <a href="#pricing" onClick={closeMobileMenu}>Pricing</a>
+            <a href="#faq" onClick={closeMobileMenu}>FAQ</a>
+            <div className="lp-menu-actions">
+              <button onClick={() => { closeMobileMenu(); navigate('/auth'); }} className="btn-primary">Get Started Free <ArrowRight size={13} /></button>
+              <button onClick={() => { closeMobileMenu(); navigate('/auth'); }} className="btn-secondary">Sign In</button>
+            </div>
+          </div>
+        )}
       </header>
 
       {/* Hero Section with Crisp 8K Indian Fine Dining Atmosphere Background */}
-      <section style={{ padding: '80px 40px 60px', maxWidth: '1280px', margin: '0 auto', position: 'relative', zIndex: 1 }}>
+      <section className="section-pad" style={{ padding: '80px 40px 60px', maxWidth: '1280px', margin: '0 auto', position: 'relative', zIndex: 1 }}>
         
         {/* Background Ultra-Sharp Indian Fine Dining Image Overlay */}
-        <div style={{ position: 'absolute', top: 0, right: '-4%', width: '65%', height: '100%', opacity: 0.28, borderRadius: '40px', overflow: 'hidden', pointerEvents: 'none', maskImage: 'linear-gradient(to left, rgba(0,0,0,1) 0%, transparent 100%)', WebkitMaskImage: 'linear-gradient(to left, rgba(0,0,0,1) 0%, transparent 100%)' }}>
-          <img src="/luxury-1.png" alt="Crisp Indian Luxury Dining Interior" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+        <div className="hero-bg-image" style={{ position: 'absolute', top: 0, right: '-4%', width: '65%', height: '100%', opacity: 0.28, borderRadius: '40px', overflow: 'hidden', pointerEvents: 'none', maskImage: 'linear-gradient(to left, rgba(0,0,0,1) 0%, transparent 100%)', WebkitMaskImage: 'linear-gradient(to left, rgba(0,0,0,1) 0%, transparent 100%)' }}>
+          <img src="/luxury-1.png" alt="Restaurant QR menu automation in action inside an Indian fine dining restaurant" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
         </div>
 
-        <div style={{ display: 'grid', gridTemplateColumns: '1.15fr 0.85fr', gap: '50px', alignItems: 'center' }}>
+        <div className="hero-grid" style={{ display: 'grid', gridTemplateColumns: '1.15fr 0.85fr', gap: '50px', alignItems: 'center' }}>
           
           {/* Left Column Text */}
           <div>
@@ -131,12 +340,21 @@ export default function LandingPage() {
             
             <h1 className="font-serif" style={{ fontSize: 'clamp(2.4rem, 4.8vw, 4.2rem)', fontWeight: '900', lineHeight: '1.12', marginBottom: '22px', letterSpacing: '-1px' }}>
               The Gold Standard in <br />
-              <span className="text-gradient-gold">Indian Fine Dining Automation</span>
+              <span className="text-gradient-gold">Restaurant Automation &amp; QR Menus</span>
+              <br /> for Indian Fine Dining
             </h1>
 
-            <p style={{ fontSize: '1.15rem', color: 'var(--text-muted)', marginBottom: '32px', lineHeight: '1.65', maxWidth: '560px' }}>
-              Empower your dining room with interactive QR menus, veg/non-veg tags, real-time kitchen display dispatch, and seamless table ordering — no app download needed.
+            <p style={{ fontSize: '1.15rem', color: 'var(--text-muted)', marginBottom: '20px', lineHeight: '1.65', maxWidth: '560px' }}>
+              Empower your dining room with a restaurant QR menu, instant contactless ordering, veg/non-veg dish tags, real-time kitchen display dispatch, and seamless table ordering — no app download needed.
             </p>
+
+            {/* Key Takeaway — direct answer block for AEO / AI extraction */}
+            <div className="key-takeaway" style={{ background: 'var(--surface-glass)', border: '1px solid var(--border)', borderLeft: '3px solid var(--primary)', borderRadius: '14px', padding: '14px 18px', maxWidth: '560px', marginBottom: '28px' }}>
+              <div style={{ fontSize: '0.72rem', fontWeight: '900', textTransform: 'uppercase', color: '#f59e0b', letterSpacing: '1px', marginBottom: '6px' }}>Key Takeaway</div>
+              <p style={{ fontSize: '0.92rem', lineHeight: '1.6', margin: 0, color: 'var(--text-main)' }}>
+                <strong>DinePulse by v4stay</strong> is the best restaurant automation software in India for fine-dining restaurants, heritage hotels, lounges &amp; bars, and cloud kitchens. It replaces paper menus and manual order-taking with a restaurant QR menu, contactless table ordering, and a live kitchen display — bottom line: faster table turns, bigger average tickets, and zero app downloads for guests. Free for 14 days, ₹14,999/year after, no per-order commissions.
+              </p>
+            </div>
 
             <div style={{ display: 'flex', gap: '14px', flexWrap: 'wrap', marginBottom: '38px' }}>
               <button className="btn-primary" style={{ padding: '14px 32px', fontSize: '0.98rem' }} onClick={() => navigate('/auth')}>
@@ -247,7 +465,7 @@ export default function LandingPage() {
             </div>
 
             {/* Floating Glass Badges */}
-            <div className="glass-panel" style={{ position: 'absolute', top: '40px', left: '-30px', padding: '10px 14px', borderRadius: '14px', display: 'flex', alignItems: 'center', gap: '8px', boxShadow: '0 10px 25px rgba(0,0,0,0.5)', border: '1px solid rgba(245, 158, 11, 0.2)' }}>
+            <div className="glass-panel hero-float-badge" style={{ position: 'absolute', top: '40px', left: '-30px', padding: '10px 14px', borderRadius: '14px', display: 'flex', alignItems: 'center', gap: '8px', boxShadow: '0 10px 25px rgba(0,0,0,0.5)', border: '1px solid rgba(245, 158, 11, 0.2)' }}>
               <div style={{ width: '28px', height: '28px', borderRadius: '8px', background: 'rgba(245, 158, 11, 0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                 <Flame size={15} color="#f59e0b" />
               </div>
@@ -257,7 +475,7 @@ export default function LandingPage() {
               </div>
             </div>
 
-            <div className="glass-panel" style={{ position: 'absolute', bottom: '50px', right: '-30px', padding: '10px 14px', borderRadius: '14px', display: 'flex', alignItems: 'center', gap: '8px', boxShadow: '0 10px 25px rgba(0,0,0,0.5)', border: '1px solid rgba(20, 184, 166, 0.2)' }}>
+            <div className="glass-panel hero-float-badge" style={{ position: 'absolute', bottom: '50px', right: '-30px', padding: '10px 14px', borderRadius: '14px', display: 'flex', alignItems: 'center', gap: '8px', boxShadow: '0 10px 25px rgba(0,0,0,0.5)', border: '1px solid rgba(20, 184, 166, 0.2)' }}>
               <div style={{ width: '28px', height: '28px', borderRadius: '8px', background: 'rgba(20, 184, 166, 0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                 <TrendingUp size={15} color="#14b8a6" />
               </div>
@@ -272,8 +490,79 @@ export default function LandingPage() {
         </div>
       </section>
 
+      {/* Definitions & Direct Answers (AEO/GEO) */}
+      <section id="what-is-dinepulse" className="section-pad" style={{ padding: '64px 40px', maxWidth: '900px', margin: '0 auto' }}>
+        <h2 className="font-serif" style={{ fontSize: '2rem', fontWeight: '900', marginBottom: '16px' }}>What is DinePulse restaurant automation?</h2>
+        <p style={{ color: 'var(--text-muted)', lineHeight: '1.7', marginBottom: '16px' }}>
+          DinePulse is a restaurant automation platform by v4stay that turns every table into a self-serve ordering point using a restaurant QR menu — the fastest-growing form of restaurant automation in India. Guests scan the QR code on their table, browse your digital menu with photos, prices, and veg/non-veg tags, and send their order straight to the kitchen display — no app download, no waiter required, no misheard orders.
+        </p>
+        <p style={{ color: 'var(--text-muted)', lineHeight: '1.7', marginBottom: '40px' }}>
+          <strong style={{ color: 'var(--text-main)' }}>Who it's for:</strong> fine-dining restaurants and heritage hotels that want royal table service, high-volume cocktail lounges and bars, cloud kitchens running lean teams, and café chains that want to raise average ticket size without adding staffing cost. Use it when guests wait too long to order, when paper menus cost a fortune to reprint, or when kitchen tickets arrive wrong or late.
+        </p>
+
+        <h2 className="font-serif" style={{ fontSize: '2rem', fontWeight: '900', marginBottom: '16px' }}>Why is DinePulse the best restaurant automation software in India?</h2>
+        <p style={{ color: 'var(--text-muted)', lineHeight: '1.7', marginBottom: '20px' }}>
+          Most restaurant software in India solves one slice of the problem — a POS here, a QR menu there. DinePulse bundles the full operational loop into one restaurant automation platform, priced flat at ₹14,999/year with no hardware installation and no commissions per order:
+        </p>
+        <ul style={{ listStyle: 'none', display: 'flex', flexDirection: 'column', gap: '10px', marginBottom: '40px', padding: 0 }}>
+          {[
+            { k: 'Restaurant QR menu & digital menu software', d: 'Table QR codes, photos, descriptions, veg/non-veg tags, and instant price updates — guests order in seconds on their own phone.' },
+            { k: 'Contactless ordering & table QR ordering', d: 'Orders and re-orders land with add-ons and notes intact, cutting order errors that plague manual take.' },
+            { k: 'Live kitchen display system (KDS)', d: 'Real-time, colour-coded order tickets for every station — tandoor, curry, bar, desserts — with one-tap completion.' },
+            { k: 'Revenue analytics & staff management', d: 'Daily sales, top dishes, average ticket size, and role-based staff access in one hotel-grade dashboard.' },
+            { k: 'Cloud kitchen & hotel-friendly', d: 'One subscription covers dine-in tables, cloud kitchen counters, hotel rooms, and lounge seats with unlimited QR codes.' }
+          ].map(item => (
+            <li key={item.k} style={{ display: 'flex', gap: '10px', alignItems: 'flex-start', color: 'var(--text-muted)', lineHeight: '1.65', fontSize: '0.94rem' }}>
+              <CheckCircle size={16} color="#14b8a6" style={{ flexShrink: 0, marginTop: '4px' }} />
+              <span><strong style={{ color: 'var(--text-main)' }}>{item.k}:</strong> {item.d}</span>
+            </li>
+          ))}
+        </ul>
+
+        <h2 className="font-serif" style={{ fontSize: '2rem', fontWeight: '900', marginBottom: '20px' }}>How do you launch contactless QR dining with DinePulse?</h2>
+        <ol style={{ listStyle: 'none', display: 'flex', flexDirection: 'column', gap: '14px', marginBottom: '40px', padding: 0 }}>
+          {[
+            { t: 'Build your digital menu', d: 'Add dishes, prices, photos, and descriptions with veg/non-veg tags in the DinePulse dashboard — no designer or developer required.' },
+            { t: 'Print & place table QR standees', d: 'Every table gets its own auto-generated code; guests scan it with any phone camera and the menu opens instantly.' },
+            { t: 'Go live with the kitchen display', d: 'Guest orders arrive on your KDS screen in real time, colour-coded by urgency, with one-tap prep updates for your kitchen team.' }
+          ].map((step, i) => (
+            <li key={step.t} className="glass-panel" style={{ padding: '16px 20px', borderRadius: '14px', display: 'flex', gap: '14px', alignItems: 'flex-start' }}>
+              <span style={{ minWidth: '28px', height: '28px', borderRadius: '50%', background: 'linear-gradient(135deg, #d97706, #f59e0b)', color: '#060709', fontWeight: '900', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.9rem', flexShrink: 0 }}>{i + 1}</span>
+              <div>
+                <strong style={{ display: 'block', marginBottom: '4px', fontSize: '0.98rem' }}>{step.t}</strong>
+                <span style={{ color: 'var(--text-muted)', fontSize: '0.88rem', lineHeight: '1.6' }}>{step.d}</span>
+              </div>
+            </li>
+          ))}
+        </ol>
+
+        <h3 style={{ fontSize: '1.05rem', fontWeight: '800', marginBottom: '14px' }}>Explore DinePulse solutions in detail</h3>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '12px' }}>
+          <Link to="/restaurant-software" className="glass-panel" style={{ padding: '16px 18px', borderRadius: '14px', textDecoration: 'none' }}>
+            <strong style={{ color: '#fcd34d', display: 'block', marginBottom: '4px', fontSize: '0.92rem' }}>Restaurant Software</strong>
+            <span style={{ color: 'var(--text-muted)', fontSize: '0.82rem', lineHeight: '1.55' }}>QR menus, live KDS, and analytics in one all-in-one suite for full-service restaurants.</span>
+          </Link>
+          <Link to="/food-software" className="glass-panel" style={{ padding: '16px 18px', borderRadius: '14px', textDecoration: 'none' }}>
+            <strong style={{ color: '#fcd34d', display: 'block', marginBottom: '4px', fontSize: '0.92rem' }}>Food Management Software</strong>
+            <span style={{ color: 'var(--text-muted)', fontSize: '0.82rem', lineHeight: '1.55' }}>Menu engineering, pricing, categories, and food-item workflows for growing kitchens and cloud kitchens.</span>
+          </Link>
+          <Link to="/restaurant-automation" className="glass-panel" style={{ padding: '16px 18px', borderRadius: '14px', textDecoration: 'none' }}>
+            <strong style={{ color: '#fcd34d', display: 'block', marginBottom: '4px', fontSize: '0.92rem' }}>Restaurant Automation</strong>
+            <span style={{ color: 'var(--text-muted)', fontSize: '0.82rem', lineHeight: '1.55' }}>Contactless ordering, kitchen dispatch, and staff alerts that remove manual order-taking entirely.</span>
+          </Link>
+          <Link to="/contact" className="glass-panel" style={{ padding: '16px 18px', borderRadius: '14px', textDecoration: 'none' }}>
+            <strong style={{ color: '#fcd34d', display: 'block', marginBottom: '4px', fontSize: '0.92rem' }}>Talk to Support</strong>
+            <span style={{ color: 'var(--text-muted)', fontSize: '0.82rem', lineHeight: '1.55' }}>Get an onboarding walkthrough or a setup review for your restaurant with the v4stay team.</span>
+          </Link>
+        </div>
+
+        <p style={{ fontSize: '0.8rem', color: 'var(--text-subtle)', marginTop: '28px' }}>
+          Last updated: October 2026 · DinePulse is built and maintained by v4stay.
+        </p>
+      </section>
+
       {/* High-End Fine Dining Showcase Cards (Using Crisp New 8K Indian Dining Photos) */}
-      <section id="luxury-experience" style={{ padding: '80px 40px', maxWidth: '1280px', margin: '0 auto' }}>
+      <section id="luxury-experience" className="section-pad" style={{ padding: '80px 40px', maxWidth: '1280px', margin: '0 auto' }}>
         <div style={{ textAlign: 'center', marginBottom: '48px' }}>
           <span style={{ color: '#f59e0b', fontWeight: '800', textTransform: 'uppercase', letterSpacing: '1px', fontSize: '0.8rem' }}>Bespoke Indian Architecture</span>
           <h2 className="font-serif" style={{ fontSize: '2.2rem', fontWeight: '900', marginTop: '6px' }}>Crafted for Premier Indian Fine Dining & Royal Heritage Hotels</h2>
@@ -319,7 +608,7 @@ export default function LandingPage() {
       </section>
 
       {/* Feature Showcase Tabs ("See DinePulse in Action") */}
-      <section id="interactive-demo" style={{ padding: '80px 40px', background: 'var(--bg-secondary)', borderTop: '1px solid var(--border)', borderBottom: '1px solid var(--border)' }}>
+      <section id="interactive-demo" className="section-pad" style={{ padding: '80px 40px', background: 'var(--bg-secondary)', borderTop: '1px solid var(--border)', borderBottom: '1px solid var(--border)' }}>
         <div style={{ maxWidth: '1100px', margin: '0 auto' }}>
           <div style={{ textAlign: 'center', marginBottom: '40px' }}>
             <span style={{ color: '#f59e0b', fontWeight: '800', textTransform: 'uppercase', letterSpacing: '1px', fontSize: '0.8rem' }}>Interactive Software Suite</span>
@@ -346,11 +635,11 @@ export default function LandingPage() {
           {/* Active Tab Preview Display */}
           <div className="glass-panel-glow" style={{ padding: '36px', borderRadius: '24px', minHeight: '340px' }}>
             {activeTab === 'menu' && (
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '32px', alignItems: 'center' }}>
+              <div className="feature-split" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '32px', alignItems: 'center' }}>
                 <div>
-                  <h3 style={{ fontSize: '1.6rem', fontWeight: '900', marginBottom: '14px', color: 'white' }}>Instant Contactless Table Ordering</h3>
+                  <h3 style={{ fontSize: '1.6rem', fontWeight: '900', marginBottom: '14px', color: 'white' }}>How does contactless QR table ordering work?</h3>
                   <p style={{ color: 'var(--text-muted)', lineHeight: '1.65', marginBottom: '20px', fontSize: '0.98rem' }}>
-                    Guests point their mobile camera at the table QR standee. Your digital menu opens in 0.3 seconds with Veg/Non-Veg indicators, food imagery, and instant cart additions.
+                    Guests point their mobile camera at the table QR standee and your QR code menu opens in 0.3 seconds with Veg/Non-Veg indicators, food imagery, and instant cart additions — the easiest contactless ordering flow for any restaurant in India.
                   </p>
                   <ul style={{ display: 'flex', flexDirection: 'column', gap: '10px', listStyle: 'none' }}>
                     {['Zero mobile app download or guest registration required', 'Clear Veg (Green) & Non-Veg (Red) dietary tags on every dish', 'Dynamic daily special highlights & instant price updates'].map(item => (
@@ -374,9 +663,9 @@ export default function LandingPage() {
             )}
 
             {activeTab === 'kitchen' && (
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '32px', alignItems: 'center' }}>
+              <div className="feature-split" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '32px', alignItems: 'center' }}>
                 <div>
-                  <h3 style={{ fontSize: '1.6rem', fontWeight: '900', marginBottom: '14px', color: 'white' }}>Chef Kitchen Display System</h3>
+                  <h3 style={{ fontSize: '1.6rem', fontWeight: '900', marginBottom: '14px', color: 'white' }}>How does the Kitchen Display System speed up service?</h3>
                   <p style={{ color: 'var(--text-muted)', lineHeight: '1.65', marginBottom: '20px', fontSize: '0.98rem' }}>
                     Eliminate paper tickets and shouting. Kitchen staff view real-time orders color-coded by urgency, mark dishes as preparing or ready, and dispatch staff automatically.
                   </p>
@@ -388,7 +677,7 @@ export default function LandingPage() {
                     ))}
                   </ul>
                 </div>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px' }}>
+                <div className="feature-split" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px' }}>
                   <div style={{ background: 'rgba(245, 158, 11, 0.12)', border: '1px solid rgba(245, 158, 11, 0.35)', padding: '16px', borderRadius: '14px' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '6px' }}>
                       <span style={{ fontWeight: '900', color: '#fcd34d' }}>Table 14</span>
@@ -411,9 +700,9 @@ export default function LandingPage() {
             )}
 
             {activeTab === 'analytics' && (
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '32px', alignItems: 'center' }}>
+              <div className="feature-split" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '32px', alignItems: 'center' }}>
                 <div>
-                  <h3 style={{ fontSize: '1.6rem', fontWeight: '900', marginBottom: '14px', color: 'white' }}>Real-time Revenue Intelligence</h3>
+                  <h3 style={{ fontSize: '1.6rem', fontWeight: '900', marginBottom: '14px', color: 'white' }}>What revenue insights does DinePulse give you?</h3>
                   <p style={{ color: 'var(--text-muted)', lineHeight: '1.65', marginBottom: '20px', fontSize: '0.98rem' }}>
                     Gain total clarity over sales trends, average ticket spend, peak seating times, and guest satisfaction ratings from your administrative dashboard.
                   </p>
@@ -440,8 +729,8 @@ export default function LandingPage() {
       </section>
 
       {/* Interactive ROI Calculator */}
-      <section id="roi-calculator" style={{ padding: '80px 40px', maxWidth: '1000px', margin: '0 auto' }}>
-        <div className="glass-panel-glow" style={{ padding: '44px', borderRadius: '28px', textAlign: 'center' }}>
+      <section id="roi-calculator" className="section-pad" style={{ padding: '80px 40px', maxWidth: '1000px', margin: '0 auto' }}>
+        <div className="glass-panel-glow roi-panel" style={{ padding: '44px', borderRadius: '28px', textAlign: 'center' }}>
           <span style={{ color: '#f59e0b', fontWeight: '800', textTransform: 'uppercase', letterSpacing: '1px', fontSize: '0.8rem' }}>Growth & Profit Engine</span>
           <h2 className="font-serif" style={{ fontSize: '2.2rem', fontWeight: '900', marginTop: '6px', marginBottom: '14px' }}>Calculate Your Revenue Growth</h2>
           <p style={{ color: 'var(--text-muted)', fontSize: '1rem', marginBottom: '36px', maxWidth: '580px', margin: '0 auto 36px' }}>
@@ -479,11 +768,17 @@ export default function LandingPage() {
               <div style={{ fontSize: '1.9rem', fontWeight: '900', color: '#fcd34d' }}>-14 Mins</div>
             </div>
           </div>
+
+          <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginTop: '28px', maxWidth: '620px', margin: '28px auto 0', lineHeight: '1.65' }}>
+            Contactless and table-side digital ordering is one of the fastest-adopted guest technologies in full-service dining, according to the
+            {' '}<a href="https://restaurant.org/research-and-media" target="_blank" rel="noopener noreferrer" style={{ color: '#f59e0b', fontWeight: '700', textDecoration: 'underline' }}>National Restaurant Association's research &amp; industry reports</a>{' '}
+            — the growth estimates above reflect that same shift toward self-serve QR ordering.
+          </p>
         </div>
       </section>
 
       {/* Testimonials */}
-      <section style={{ padding: '80px 40px', maxWidth: '1100px', margin: '0 auto' }}>
+      <section className="section-pad" style={{ padding: '80px 40px', maxWidth: '1100px', margin: '0 auto' }}>
         <div style={{ textAlign: 'center', marginBottom: '48px' }}>
           <span style={{ color: '#14b8a6', fontWeight: '800', textTransform: 'uppercase', letterSpacing: '1px', fontSize: '0.8rem' }}>Endorsed by Top Chefs & Hoteliers</span>
           <h2 className="font-serif" style={{ fontSize: '2.2rem', fontWeight: '900', marginTop: '6px' }}>What Restaurant Owners Say</h2>
@@ -510,7 +805,7 @@ export default function LandingPage() {
       </section>
 
       {/* Pricing Section */}
-      <section id="pricing" style={{ padding: '80px 40px', background: 'var(--bg-secondary)', borderTop: '1px solid var(--border)' }}>
+      <section id="pricing" className="section-pad" style={{ padding: '80px 40px', background: 'var(--bg-secondary)', borderTop: '1px solid var(--border)' }}>
         <div style={{ maxWidth: '900px', margin: '0 auto', textAlign: 'center' }}>
           <span style={{ color: '#f59e0b', fontWeight: '800', textTransform: 'uppercase', letterSpacing: '1px', fontSize: '0.8rem' }}>Transparent Pricing</span>
           <h2 className="font-serif" style={{ fontSize: '2.2rem', fontWeight: '900', marginTop: '6px', marginBottom: '40px' }}>Invest in Your Restaurant's Future</h2>
@@ -549,11 +844,44 @@ export default function LandingPage() {
               <button onClick={() => navigate('/auth')} className="btn-primary" style={{ width: '100%', padding: '12px', fontSize: '0.9rem' }}>Start 14-Day Free Trial</button>
             </div>
           </div>
+
+          {/* Plan Comparison Table (structured comparison for quick scans & AI answers) */}
+          <table style={{ width: '100%', maxWidth: '780px', margin: '48px auto 0', borderCollapse: 'collapse', fontSize: '0.88rem', textAlign: 'left' }}>
+            <caption style={{ captionSide: 'top', textAlign: 'left', fontWeight: '800', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '1px', fontSize: '0.78rem', padding: '0 4px 12px' }}>
+              DinePulse plan comparison — free trial vs premium annual
+            </caption>
+            <thead>
+              <tr style={{ borderBottom: '1px solid var(--border-light)' }}>
+                <th scope="col" style={{ padding: '10px 12px', fontWeight: '800' }}>Feature</th>
+                <th scope="col" style={{ padding: '10px 12px', fontWeight: '800' }}>Free 14-Day Trial</th>
+                <th scope="col" style={{ padding: '10px 12px', fontWeight: '800', color: '#f59e0b' }}>Premium Annual (₹14,999/yr)</th>
+              </tr>
+            </thead>
+            <tbody>
+              {[
+                { f: 'Digital menu builder with photos & veg/non-veg tags', t: true, p: true },
+                { f: 'Unlimited table QR codes', t: true, p: true },
+                { f: 'Guest menu browsing', t: true, p: true },
+                { f: 'Contactless table ordering & cart', t: false, p: true },
+                { f: 'Live Kitchen Display System (KDS)', t: false, p: true },
+                { f: 'Sales analytics & revenue charts', t: false, p: true },
+                { f: 'Staff management & role control', t: false, p: true },
+                { f: 'Guest feedback, ratings & receipts', t: false, p: true },
+                { f: 'Priority 24/7 concierge support', t: false, p: true }
+              ].map(row => (
+                <tr key={row.f} style={{ borderBottom: '1px solid var(--border)' }}>
+                  <td style={{ padding: '10px 12px', color: 'var(--text-main)' }}>{row.f}</td>
+                  <td style={{ padding: '10px 12px', color: row.t ? '#14b8a6' : 'var(--text-subtle)', fontWeight: row.t ? '800' : '400' }}>{row.t ? '✓ Included' : '—'}</td>
+                  <td style={{ padding: '10px 12px', color: '#f59e0b', fontWeight: '800' }}>✓ Included</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </div>
       </section>
 
       {/* FAQ Section */}
-      <section id="faq" style={{ padding: '80px 40px', maxWidth: '850px', margin: '0 auto' }}>
+      <section id="faq" className="section-pad" style={{ padding: '80px 40px', maxWidth: '850px', margin: '0 auto' }}>
         <div style={{ textAlign: 'center', marginBottom: '40px' }}>
           <HelpCircle size={26} color="#f59e0b" style={{ margin: '0 auto 10px' }} />
           <h2 className="font-serif" style={{ fontSize: '2.2rem', fontWeight: '900' }}>Frequently Asked Questions</h2>
@@ -565,7 +893,9 @@ export default function LandingPage() {
             { q: 'How does restaurant automation work with DinePulse?', a: 'DinePulse automates table ordering by sending guest QR orders directly to kitchen displays and staff devices, eliminating manual order-taking and reducing wait times.' },
             { q: 'Is QR ordering safe and contactless for guests?', a: 'Yes, QR ordering is 100% contactless. Guests use their own mobile devices, eliminating touch points with shared physical menus.' },
             { q: 'How much does DinePulse cost?', a: 'DinePulse offers a 14-day free trial with access to all features. Premium plans are ₹14,999 per year with unlimited digital menus, table QR code downloads, staff logins, and real-time analytics.' },
-            { q: 'Do guests need to download an app to view the menu?', a: 'No app download is required! The digital menu opens instantly in Safari, Chrome, or Firefox upon scanning the table QR code.' }
+            { q: 'Do guests need to download an app to view the menu?', a: 'No app download is required! The digital menu opens instantly in Safari, Chrome, or Firefox upon scanning the table QR code.' },
+            { q: 'Which is the best restaurant automation software in India?', a: 'DinePulse is the best restaurant automation software in India for fine-dining restaurants, heritage hotels, lounges, bars, and cloud kitchens. It combines a restaurant QR menu, contactless table ordering, a live kitchen display system, staff management, and revenue analytics at ₹14,999 per year — with a 14-day free trial and zero commissions per order.' },
+            { q: 'Does a restaurant QR menu work for cloud kitchens and hotel rooms in India?', a: 'Yes. A restaurant QR menu works anywhere guests can scan a code — dine-in tables, cloud kitchen pickup counters, hotel rooms, lounge seats, and boutique bars. DinePulse supports unlimited table QR codes on one subscription, so a single account covers your entire venue.' }
           ].map((item, idx) => (
             <div 
               key={idx} 
@@ -588,7 +918,7 @@ export default function LandingPage() {
 
       {/* Luxury Footer */}
       <footer style={{ padding: '44px 40px 32px', background: 'var(--bg-secondary)', borderTop: '1px solid var(--border)', color: 'var(--text-muted)' }}>
-        <div style={{ maxWidth: '1150px', margin: '0 auto', display: 'grid', gridTemplateColumns: '2fr 1fr 1fr 1fr', gap: '36px', marginBottom: '36px' }}>
+        <div className="footer-grid" style={{ maxWidth: '1150px', margin: '0 auto', display: 'grid', gridTemplateColumns: '2fr 1fr 1fr 1fr', gap: '36px', marginBottom: '36px' }}>
           <div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '10px', fontWeight: '900', fontSize: '1.35rem', color: 'white', marginBottom: '10px' }}>
               <img src="/logo.png" alt="DinePulse Gold Logo" style={{ height: '26px', borderRadius: '6px' }} />

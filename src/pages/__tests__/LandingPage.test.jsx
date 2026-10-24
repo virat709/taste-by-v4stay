@@ -15,7 +15,7 @@ describe('LandingPage Component', () => {
     );
 
     expect(screen.getAllByText('DinePulse')[0]).toBeInTheDocument();
-    expect(screen.getByText(/Indian Fine Dining Automation/i)).toBeInTheDocument();
+    expect(screen.getByText(/Restaurant Automation &+ QR Menus/i)).toBeInTheDocument();
     expect(screen.getByText(/Calculate Your Revenue Growth/i)).toBeInTheDocument();
     expect(screen.getByText(/Frequently Asked Questions/i)).toBeInTheDocument();
   });

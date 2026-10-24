@@ -25,14 +25,14 @@ export default function FoodSoftwarePage() {
           <img src="/logo.png" alt="DinePulse Food Software Logo" style={{ height: '26px', width: 'auto', borderRadius: '6px' }} />
           <span>DinePulse</span>
         </div>
-        <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
-          <button onClick={() => navigate('/auth')} className="btn-secondary" style={{ padding: '8px 18px', fontSize: '0.88rem' }}>Sign In</button>
-          <button onClick={() => navigate('/auth')} className="btn-primary" style={{ padding: '8px 20px', fontSize: '0.88rem' }}>Get Started Free <ArrowRight size={14} /></button>
+        <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }} className="lp-header-actions">
+          <button onClick={() => navigate('/auth')} className="btn-secondary lp-signin" style={{ padding: '8px 18px', fontSize: '0.88rem' }}>Sign In</button>
+          <button onClick={() => navigate('/auth')} className="btn-primary lp-cta" style={{ padding: '8px 20px', fontSize: '0.88rem' }}>Get Started Free <ArrowRight size={14} /></button>
         </div>
       </header>
 
       {/* Hero Section */}
-      <section style={{ padding: '70px 40px 50px', textAlign: 'center', maxWidth: '950px', margin: '0 auto' }}>
+      <section className="section-pad" style={{ padding: '70px 40px 50px', textAlign: 'center', maxWidth: '950px', margin: '0 auto' }}>
         <span style={{ background: 'rgba(20,184,166,0.12)', color: '#14b8a6', borderRadius: '50px', padding: '5px 16px', fontSize: '0.8rem', fontWeight: '700', display: 'inline-block', marginBottom: '20px', border: '1px solid rgba(20,184,166,0.28)' }}>
           🍲 Smart Food Ordering & Management Software
         </span>
@@ -50,7 +50,7 @@ export default function FoodSoftwarePage() {
       </section>
 
       {/* Pillars */}
-      <section style={{ padding: '50px 40px', maxWidth: '1050px', margin: '0 auto' }}>
+      <section className="section-pad" style={{ padding: '50px 40px', maxWidth: '1050px', margin: '0 auto' }}>
         <h2 style={{ textAlign: 'center', fontSize: '2rem', fontWeight: '800', marginBottom: '40px' }}>Smart Food Software Features</h2>
         
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '24px' }}>
@@ -75,7 +75,7 @@ export default function FoodSoftwarePage() {
       </section>
 
       {/* CTA */}
-      <section style={{ padding: '70px 40px', textAlign: 'center', background: 'linear-gradient(135deg, #0f766e 0%, #14b8a6 100%)' }}>
+      <section className="section-pad" style={{ padding: '70px 40px', textAlign: 'center', background: 'linear-gradient(135deg, #0f766e 0%, #14b8a6 100%)' }}>
         <h2 style={{ fontSize: '2.2rem', fontWeight: '800', color: 'white', marginBottom: '14px' }}>Ready to Elevate Your Food Service?</h2>
         <p style={{ color: 'rgba(255,255,255,0.9)', fontSize: '1.05rem', marginBottom: '28px' }}>Join food businesses using DinePulse food software today.</p>
         <button onClick={() => navigate('/auth')} style={{ background: 'white', color: '#0f766e', border: 'none', padding: '14px 34px', borderRadius: '50px', fontWeight: '800', fontSize: '0.98rem', cursor: 'pointer', fontFamily: 'inherit' }}>
