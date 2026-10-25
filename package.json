@@ -22,6 +22,9 @@
     "razorpay",
     "v4stay"
   ],
+  "engines": {
+    "node": "^22.12.0 || ^24.0.0 || >=26.0.0"
+  },
   "author": "v4stay",
   "license": "MIT",
   "scripts": {
@@ -53,7 +56,11 @@
     "eslint-plugin-react-refresh": "^0.5.7",
     "globals": "^17.13.0",
     "jsdom": "^29.1.1",
+    "rolldown": "^1.2.15",
     "vite": "^8.0.12",
-    "vitest": "^5.0.4"
+    "vitest": "^5.0.5"
+  },
+  "overrides": {
+    "@grpc/grpc-js": "^1.14.6"
   }
 }
