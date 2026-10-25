@@ -26,6 +26,9 @@ jobs:
       - name: Run ESLint Audit
         run: npm run lint
 
+      - name: Run Vulnerability Audit
+        run: npm audit --audit-level=high
+
       - name: Run Vitest Unit Tests
         run: npm test -- --watch=false
 

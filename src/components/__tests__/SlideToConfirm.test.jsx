@@ -45,8 +45,9 @@ describe('SlideToConfirm', () => {
     const thumb = screen.getByTestId('slide-thumb');
     fireEvent.keyDown(thumb, { key: 'Enter' });
     expect(onConfirm).toHaveBeenCalledTimes(1);
-    await vi.runAllTimersAsync();          // flash window (900ms) elapses
-    await act(async () => {});             // flush React state (flash reset)
+    await act(async () => {
+      await vi.runAllTimersAsync();        // flash window (900ms) elapses, flash resets
+    });
     fireEvent.keyDown(thumb, { key: 'Enter' });
     await act(async () => {});
     expect(onConfirm).toHaveBeenCalledTimes(2);

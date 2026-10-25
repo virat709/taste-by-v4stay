@@ -81,6 +81,14 @@ h1, h2, h3, h4 {
   line-height: 1.15;
 }
 
+/* Route-level lazy-load spinner (App.jsx PageLoader fallback) */
+@keyframes taste-route-loader-spin {
+  to { transform: rotate(360deg); }
+}
+@media (prefers-reduced-motion: reduce) {
+  [style*="taste-route-loader-spin"] { animation: none !important; }
+}
+
 .font-serif {
   font-family: 'Cinzel', serif;
 }
